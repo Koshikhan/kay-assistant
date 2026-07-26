@@ -1,65 +1,260 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import {
+  RealtimeAgent,
+  RealtimeSession,
+} from "@openai/agents/realtime";
+
+type ConnectionStatus =
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "error";
+
+type TokenResponse = {
+  clientSecret?: string;
+  error?: string;
+};
 
 export default function Home() {
+  const sessionRef = useRef<RealtimeSession | null>(null);
+
+  const [status, setStatus] =
+    useState<ConnectionStatus>("disconnected");
+
+  const [isMuted, setIsMuted] = useState(false);
+  const [isAssistantSpeaking, setIsAssistantSpeaking] =
+    useState(false);
+
+  const [errorMessage, setErrorMessage] = useState("");
+
+  async function startConversation() {
+    if (status === "connecting" || status === "connected") {
+      return;
+    }
+
+    try {
+      setStatus("connecting");
+      setErrorMessage("");
+
+      // Ask our secure backend for a temporary token.
+      const tokenResponse = await fetch("/api/realtime-token", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const tokenData =
+        (await tokenResponse.json()) as TokenResponse;
+
+      if (!tokenResponse.ok || !tokenData.clientSecret) {
+        throw new Error(
+          tokenData.error ??
+            "The temporary voice token could not be created.",
+        );
+      }
+
+      // Define the personality and purpose of our assistant.
+      const agent = new RealtimeAgent({
+        name: "Kay Assistant",
+        instructions: `
+          You are Kay Assistant, a friendly personal AI assistant.
+
+          Your main areas are:
+          - Photography
+          - Videography
+          - Drone filming
+          - Content planning
+          - Equipment organisation
+          - Daily productivity
+
+          Speak naturally and clearly.
+          Keep spoken answers reasonably short.
+          Ask one question at a time when clarification is needed.
+
+          Do not pretend that you have checked live weather,
+          drone restrictions or calendar information unless
+          a tool has actually provided that information.
+        `,
+      });
+
+      const session = new RealtimeSession(agent, {
+        model: "gpt-realtime-2.1",
+      });
+
+      session.on("audio_start", () => {
+        setIsAssistantSpeaking(true);
+      });
+
+      session.on("audio_stopped", () => {
+        setIsAssistantSpeaking(false);
+      });
+
+      session.on("audio_interrupted", () => {
+        setIsAssistantSpeaking(false);
+      });
+
+      session.on("error", (error) => {
+        console.error("Realtime session error:", error);
+        setErrorMessage(
+          "The voice session encountered an error.",
+        );
+      });
+
+      // Connect using the temporary ek_ token.
+      await session.connect({
+        apiKey: tokenData.clientSecret,
+      });
+
+      sessionRef.current = session;
+      setStatus("connected");
+    } catch (error) {
+      console.error("Voice connection failed:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "The voice connection failed.";
+
+      setErrorMessage(message);
+      setStatus("error");
+    }
+  }
+
+  function toggleMute() {
+    const session = sessionRef.current;
+
+    if (!session) {
+      return;
+    }
+
+    const nextMutedState = !isMuted;
+
+    session.mute(nextMutedState);
+    setIsMuted(nextMutedState);
+  }
+
+  function stopConversation() {
+    sessionRef.current?.close();
+    sessionRef.current = null;
+
+    setStatus("disconnected");
+    setIsMuted(false);
+    setIsAssistantSpeaking(false);
+    setErrorMessage("");
+  }
+
+  // Close the microphone connection when leaving the page.
+  useEffect(() => {
+    return () => {
+      sessionRef.current?.close();
+    };
+  }, []);
+
+  function getStatusText() {
+    if (status === "connecting") {
+      return "Connecting to Kay Assistant...";
+    }
+
+    if (status === "connected" && isMuted) {
+      return "Microphone muted";
+    }
+
+    if (status === "connected" && isAssistantSpeaking) {
+      return "Kay Assistant is speaking...";
+    }
+
+    if (status === "connected") {
+      return "Listening — speak naturally";
+    }
+
+    if (status === "error") {
+      return "Connection failed";
+    }
+
+    return "Ready to begin";
+  }
+
+  const isConnected = status === "connected";
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 text-white">
+      <section className="w-full max-w-xl rounded-3xl border border-neutral-800 bg-neutral-900 p-8 shadow-2xl">
+        <div className="mb-8">
+          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-neutral-400">
+            Voice-first AI assistant
+          </p>
+
+          <h1 className="text-4xl font-bold tracking-tight">
+            Kay Assistant
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="mt-4 leading-7 text-neutral-400">
+            Your photography, videography, drone and
+            productivity assistant.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <div className="rounded-2xl bg-neutral-800 p-5">
+          <div className="mb-5 flex items-center gap-3">
+            <span
+              className={`h-3 w-3 rounded-full ${
+                status === "connected"
+                  ? "animate-pulse bg-green-500"
+                  : status === "connecting"
+                    ? "animate-pulse bg-yellow-500"
+                    : status === "error"
+                      ? "bg-red-500"
+                      : "bg-neutral-500"
+              }`}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+            <p className="font-medium">{getStatusText()}</p>
+          </div>
+
+          {errorMessage && (
+            <div className="mb-5 rounded-xl border border-red-900 bg-red-950/50 p-4 text-sm text-red-200">
+              {errorMessage}
+            </div>
+          )}
+
+          {!isConnected ? (
+            <button
+              type="button"
+              onClick={startConversation}
+              disabled={status === "connecting"}
+              className="w-full rounded-xl bg-white px-5 py-3 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {status === "connecting"
+                ? "Connecting..."
+                : "Start voice conversation"}
+            </button>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="rounded-xl border border-neutral-600 px-5 py-3 font-semibold transition hover:bg-neutral-700"
+              >
+                {isMuted ? "Unmute" : "Mute"}
+              </button>
+
+              <button
+                type="button"
+                onClick={stopConversation}
+                className="rounded-xl bg-red-600 px-5 py-3 font-semibold transition hover:bg-red-500"
+              >
+                End conversation
+              </button>
+            </div>
+          )}
         </div>
-      </main>
-    </div>
+
+        <p className="mt-6 text-center text-xs text-neutral-500">
+          Your microphone is active only during a voice
+          conversation.
+        </p>
+      </section>
+    </main>
   );
 }
