@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  type FormEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import {
   RealtimeAgent,
   RealtimeSession,
@@ -26,8 +32,8 @@ type ChatMessage = {
 };
 
 /**
- * Converts the Realtime SDK history into simple
- * messages that our React interface can display.
+ * Converts the Realtime SDK history into
+ * messages that can be displayed in the interface.
  */
 function convertHistoryToMessages(
   history: RealtimeItem[],
@@ -81,28 +87,33 @@ function convertHistoryToMessages(
 }
 
 export default function Home() {
-  const sessionRef = useRef<RealtimeSession | null>(null);
-  const transcriptEndRef = useRef<HTMLDivElement | null>(
-    null,
-  );
+  const sessionRef =
+    useRef<RealtimeSession | null>(null);
+
+  const transcriptEndRef =
+    useRef<HTMLDivElement | null>(null);
 
   const [status, setStatus] =
     useState<ConnectionStatus>("disconnected");
 
-  const [messages, setMessages] = useState<ChatMessage[]>(
-    [],
-  );
+  const [messages, setMessages] =
+    useState<ChatMessage[]>([]);
+
+  const [textInput, setTextInput] = useState("");
 
   const [isMuted, setIsMuted] = useState(false);
 
-  const [isAssistantSpeaking, setIsAssistantSpeaking] =
-    useState(false);
+  const [
+    isAssistantSpeaking,
+    setIsAssistantSpeaking,
+  ] = useState(false);
 
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] =
+    useState("");
 
   /**
-   * Scroll to the newest message whenever
-   * the transcript changes.
+   * Scroll to the latest message whenever
+   * the conversation changes.
    */
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({
@@ -111,8 +122,8 @@ export default function Home() {
   }, [messages]);
 
   /**
-   * Close the Realtime connection when the
-   * user leaves the page.
+   * Close the Realtime session when
+   * the user leaves the page.
    */
   useEffect(() => {
     return () => {
@@ -132,6 +143,7 @@ export default function Home() {
       setStatus("connecting");
       setErrorMessage("");
       setMessages([]);
+      setTextInput("");
 
       const tokenResponse = await fetch(
         "/api/realtime-token",
@@ -201,10 +213,6 @@ export default function Home() {
         },
       });
 
-      /**
-       * This event returns the complete
-       * conversation history every time it changes.
-       */
       session.on("history_updated", (history) => {
         const updatedMessages =
           convertHistoryToMessages(history);
@@ -240,7 +248,6 @@ export default function Home() {
       });
 
       sessionRef.current = session;
-
       setStatus("connected");
     } catch (error) {
       console.error(
@@ -255,6 +262,37 @@ export default function Home() {
 
       setErrorMessage(message);
       setStatus("error");
+    }
+  }
+
+  function sendTypedMessage(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    const message = textInput.trim();
+    const session = sessionRef.current;
+
+    if (
+      !session ||
+      status !== "connected" ||
+      !message
+    ) {
+      return;
+    }
+
+    try {
+      session.sendMessage(message);
+      setTextInput("");
+    } catch (error) {
+      console.error(
+        "Typed message failed:",
+        error,
+      );
+
+      setErrorMessage(
+        "Your typed message could not be sent.",
+      );
     }
   }
 
@@ -279,6 +317,7 @@ export default function Home() {
     setIsMuted(false);
     setIsAssistantSpeaking(false);
     setErrorMessage("");
+    setTextInput("");
   }
 
   function clearTranscript() {
@@ -329,8 +368,8 @@ export default function Home() {
             </h1>
 
             <p className="mt-4 leading-7 text-neutral-400">
-              Your photography, videography, drone and
-              productivity assistant.
+              Your photography, videography, drone
+              and productivity assistant.
             </p>
           </div>
 
@@ -392,8 +431,8 @@ export default function Home() {
           </div>
 
           <p className="mt-5 text-center text-xs text-neutral-500">
-            Your microphone is active only during a voice
-            conversation.
+            Your microphone is active only during
+            a voice conversation.
           </p>
         </section>
 
@@ -406,19 +445,21 @@ export default function Home() {
               </h2>
 
               <p className="mt-1 text-sm text-neutral-500">
-                Your voice conversation will appear here.
+                Speak or type during the same
+                conversation.
               </p>
             </div>
 
-            {messages.length > 0 && !isConnected && (
-              <button
-                type="button"
-                onClick={clearTranscript}
-                className="rounded-lg px-3 py-2 text-sm text-neutral-400 transition hover:bg-neutral-800 hover:text-white"
-              >
-                Clear
-              </button>
-            )}
+            {messages.length > 0 &&
+              !isConnected && (
+                <button
+                  type="button"
+                  onClick={clearTranscript}
+                  className="rounded-lg px-3 py-2 text-sm text-neutral-400 transition hover:bg-neutral-800 hover:text-white"
+                >
+                  Clear
+                </button>
+              )}
           </div>
 
           <div className="flex-1 space-y-5 overflow-y-auto p-6">
@@ -434,8 +475,8 @@ export default function Home() {
                   </p>
 
                   <p className="mt-2 text-sm leading-6 text-neutral-500">
-                    Start a voice conversation and speak
-                    naturally.
+                    Start a conversation, then speak
+                    naturally or type a message.
                   </p>
                 </div>
               </div>
@@ -484,6 +525,45 @@ export default function Home() {
 
             <div ref={transcriptEndRef} />
           </div>
+
+          {/* Typed-message form */}
+          <form
+            onSubmit={sendTypedMessage}
+            className="border-t border-neutral-800 p-5"
+          >
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(event) =>
+                  setTextInput(event.target.value)
+                }
+                disabled={!isConnected}
+                placeholder={
+                  isConnected
+                    ? "Type a message to Kay..."
+                    : "Start a conversation to type"
+                }
+                className="min-w-0 flex-1 rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-3 text-white outline-none transition placeholder:text-neutral-500 focus:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+
+              <button
+                type="submit"
+                disabled={
+                  !isConnected ||
+                  !textInput.trim()
+                }
+                className="rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Send
+              </button>
+            </div>
+
+            <p className="mt-3 text-xs text-neutral-500">
+              Switch between speaking and typing
+              during the same conversation.
+            </p>
+          </form>
         </section>
       </div>
     </main>
