@@ -13,6 +13,8 @@ import {
   type RealtimeItem,
 } from "@openai/agents/realtime";
 
+import { shootWeatherTool } from "@/lib/shootWeatherTool";
+
 type ConnectionStatus =
   | "disconnected"
   | "connecting"
@@ -32,8 +34,8 @@ type ChatMessage = {
 };
 
 /**
- * Converts the Realtime SDK history into
- * messages that can be displayed in the interface.
+ * Convert the Realtime SDK history into messages
+ * that can be displayed in the interface.
  */
 function convertHistoryToMessages(
   history: RealtimeItem[],
@@ -86,6 +88,27 @@ function convertHistoryToMessages(
   });
 }
 
+/**
+ * Return the date using the user's local timezone
+ * rather than UTC.
+ */
+function getLocalDateString(): string {
+  const now = new Date();
+
+  const year = now.getFullYear();
+
+  const month = String(
+    now.getMonth() + 1,
+  ).padStart(2, "0");
+
+  const day = String(now.getDate()).padStart(
+    2,
+    "0",
+  );
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function Home() {
   const sessionRef =
     useRef<RealtimeSession | null>(null);
@@ -112,7 +135,7 @@ export default function Home() {
     useState("");
 
   /**
-   * Scroll to the latest message whenever
+   * Scroll to the newest message whenever
    * the conversation changes.
    */
   useEffect(() => {
@@ -122,7 +145,7 @@ export default function Home() {
   }, [messages]);
 
   /**
-   * Close the Realtime session when
+   * Close the Realtime connection when
    * the user leaves the page.
    */
   useEffect(() => {
@@ -166,11 +189,17 @@ export default function Home() {
         );
       }
 
+      const currentDate = getLocalDateString();
+
       const agent = new RealtimeAgent({
         name: "Kay Assistant",
 
+        tools: [shootWeatherTool],
+
         instructions: `
           You are Kay Assistant, a friendly personal AI assistant.
+
+          Today's local date is ${currentDate}.
 
           Your main areas are:
           - Photography
@@ -182,11 +211,54 @@ export default function Home() {
 
           Speak naturally and clearly.
           Keep spoken answers reasonably short.
-          Ask one question at a time when clarification is needed.
+          Ask only one question at a time when clarification
+          is required.
+
+          WEATHER TOOL RULES
+
+          When the user asks about:
+          - Weather
+          - Golden hour
+          - Sunrise or sunset
+          - Temperature
+          - Rain
+          - Cloud cover
+          - Visibility
+          - Wind speed
+          - Wind gusts
+          - The best time for a photography or drone shoot
+
+          You must call the get_shoot_weather tool.
+
+          Convert relative dates such as today, tomorrow,
+          this Saturday or next Sunday into YYYY-MM-DD format
+          before calling the tool.
+
+          If the user does not provide a location, ask for it.
+
+          If the user does not provide a date, ask for it unless
+          the date can clearly be understood from their message.
+
+          After receiving the forecast, provide:
+          - The recommended shoot period
+          - Golden-hour times
+          - Temperature
+          - Rain probability
+          - Wind speed and gusts
+          - Cloud cover when useful
+          - Visibility when useful
+          - A short explanation of why the time is recommended
+
+          For a drone shoot, pay particular attention to wind
+          gusts and rain.
+
+          Weather information is only a planning aid.
+          Never claim that a drone flight is legally permitted
+          or completely safe based only on weather information.
 
           Do not pretend that you checked live weather,
           drone restrictions, maps or calendar information
-          unless a tool actually provided that information.
+          unless an appropriate tool actually provided it.
         `,
       });
 
@@ -430,6 +502,17 @@ export default function Home() {
             )}
           </div>
 
+          <div className="mt-5 rounded-xl border border-neutral-800 bg-neutral-950/50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              Live capability
+            </p>
+
+            <p className="mt-2 text-sm text-neutral-400">
+              Kay can now retrieve weather and
+              golden-hour information for shoot planning.
+            </p>
+          </div>
+
           <p className="mt-5 text-center text-xs text-neutral-500">
             Your microphone is active only during
             a voice conversation.
@@ -475,8 +558,8 @@ export default function Home() {
                   </p>
 
                   <p className="mt-2 text-sm leading-6 text-neutral-500">
-                    Start a conversation, then speak
-                    naturally or type a message.
+                    Start a conversation, then ask about
+                    photography, drones or shoot weather.
                   </p>
                 </div>
               </div>
@@ -541,7 +624,7 @@ export default function Home() {
                 disabled={!isConnected}
                 placeholder={
                   isConnected
-                    ? "Type a message to Kay..."
+                    ? "Ask Kay about your next shoot..."
                     : "Start a conversation to type"
                 }
                 className="min-w-0 flex-1 rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-3 text-white outline-none transition placeholder:text-neutral-500 focus:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
@@ -560,8 +643,8 @@ export default function Home() {
             </div>
 
             <p className="mt-3 text-xs text-neutral-500">
-              Switch between speaking and typing
-              during the same conversation.
+              Try: “What is the best time for a
+              drone shoot in Brighton tomorrow?”
             </p>
           </form>
         </section>
