@@ -16,6 +16,8 @@ import {
 import { ShootWeatherCard } from "@/components/ShootWeatherCard";
 import { UpcomingShoots } from "@/components/UpcomingShoots";
 
+import { createShootPlanTool } from "@/lib/shootPlanTool";
+
 import {
   deleteShootPlan,
   loadShootPlans,
@@ -229,10 +231,18 @@ export default function Home() {
           setLatestForecast(forecast);
         });
 
+      const shootPlanTool =
+        createShootPlanTool((updatedPlans) => {
+          setShootPlans(updatedPlans);
+        });
+
       const agent = new RealtimeAgent({
         name: "Kay Assistant",
 
-        tools: [shootWeatherTool],
+        tools: [
+          shootWeatherTool,
+          shootPlanTool,
+        ],
 
         instructions: `
           You are Kay Assistant, a friendly personal AI assistant.
@@ -293,6 +303,53 @@ export default function Home() {
           Weather information is only a planning aid.
           Never claim that a drone flight is legally permitted
           or completely safe based only on weather information.
+
+          SHOOT PLAN TOOL RULES
+
+          When the user clearly asks to create, save, schedule
+          or add a shoot plan, use the create_shoot_plan tool.
+
+          Before creating a shoot plan, make sure you know:
+          - The shoot type
+          - The location
+          - The date
+
+          Ask for missing information one question at a time.
+
+          When weather affects the shoot, call the
+          get_shoot_weather tool before calling
+          create_shoot_plan.
+
+          Create:
+          - A clear and useful title
+          - A suitable recommended time
+          - A practical shot list
+          - A relevant equipment checklist
+          - Short preparation notes
+
+          For photography shoots, include useful compositions,
+          angles and lighting ideas.
+
+          For videography shoots, include a mixture of wide,
+          medium, close-up and detail shots.
+
+          For drone shoots, include controlled movements such as
+          reveals, orbits, top-down shots and pull-away shots.
+
+          Do not save a shoot when the user only asks for:
+          - General ideas
+          - Advice
+          - Weather information
+          - Camera settings
+
+          Only save a plan when the user clearly asks you to
+          create or save it.
+
+          After saving the plan, briefly confirm:
+          - The shoot title
+          - The date
+          - The location
+          - The recommended time
 
           Do not pretend that you checked live weather,
           drone restrictions, maps or calendar information
@@ -585,12 +642,12 @@ export default function Home() {
 
           <div className="mt-5 rounded-xl border border-neutral-800 bg-neutral-950/50 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              Live capability
+              Live capabilities
             </p>
 
             <p className="mt-2 text-sm text-neutral-400">
-              Kay can retrieve live weather and
-              golden-hour information for shoot planning.
+              Kay can retrieve live shoot weather,
+              calculate golden hour and save shoot plans.
             </p>
           </div>
 
@@ -643,8 +700,8 @@ export default function Home() {
                   </p>
 
                   <p className="mt-2 text-sm leading-6 text-neutral-500">
-                    Start a conversation, then ask about
-                    photography, drones or shoot weather.
+                    Ask about shoot weather or tell Kay
+                    to create and save a new shoot plan.
                   </p>
                 </div>
               </div>
@@ -709,7 +766,7 @@ export default function Home() {
                 disabled={!isConnected}
                 placeholder={
                   isConnected
-                    ? "Ask Kay about your next shoot..."
+                    ? "Ask Kay to plan your next shoot..."
                     : "Start a conversation to type"
                 }
                 className="min-w-0 flex-1 rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-3 text-white outline-none transition placeholder:text-neutral-500 focus:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
@@ -728,8 +785,8 @@ export default function Home() {
             </div>
 
             <p className="mt-3 text-xs text-neutral-500">
-              Try: “What is the best time for a
-              drone shoot in Brighton tomorrow?”
+              Try: “Create and save a drone shoot
+              plan for Brighton tomorrow evening.”
             </p>
           </form>
         </section>
