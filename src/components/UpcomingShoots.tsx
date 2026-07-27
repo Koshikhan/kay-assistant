@@ -290,6 +290,59 @@ export function UpcomingShoots({
     statusFilter !== "all" ||
     sortOrder !== "date-ascending";
 
+  const plannedShootCount =
+    plans.filter(
+      (plan) => plan.status === "planned",
+    ).length;
+
+  const completedShootCount =
+    plans.filter(
+      (plan) => plan.status === "completed",
+    ).length;
+
+  const photographyShootCount =
+    plans.filter(
+      (plan) =>
+        plan.shootType === "photography",
+    ).length;
+
+  const videographyShootCount =
+    plans.filter(
+      (plan) =>
+        plan.shootType === "videography",
+    ).length;
+
+  const droneShootCount =
+    plans.filter(
+      (plan) => plan.shootType === "drone",
+    ).length;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const sevenDaysFromToday =
+    new Date(today);
+
+  sevenDaysFromToday.setDate(
+    sevenDaysFromToday.getDate() + 7,
+  );
+
+  const shootsThisWeekCount =
+    plans.filter((plan) => {
+      if (plan.status !== "planned") {
+        return false;
+      }
+
+      const shootDate = new Date(
+        `${plan.date}T12:00:00`,
+      );
+
+      return (
+        shootDate >= today &&
+        shootDate < sevenDaysFromToday
+      );
+    }).length;
+
   function toggleDetails(
     shootId: string,
   ) {
@@ -430,6 +483,70 @@ export function UpcomingShoots({
             </div>
           )}
         </div>
+
+        {plans.length > 0 && (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Planned
+              </p>
+
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {plannedShootCount}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Completed
+              </p>
+
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {completedShootCount}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Next 7 days
+              </p>
+
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {shootsThisWeekCount}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Photography
+              </p>
+
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {photographyShootCount}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Videography
+              </p>
+
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {videographyShootCount}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Drone
+              </p>
+
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {droneShootCount}
+              </p>
+            </div>
+          </div>
+        )}
 
         {plans.length > 0 && (
           <div className="mt-5 grid gap-3 rounded-2xl border border-neutral-800 bg-neutral-950/50 p-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))_auto]">
