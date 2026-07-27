@@ -2,14 +2,30 @@
 
 import { useState } from "react";
 
-import type {
-  ShootPlan,
-  ShootType,
-  ShootWeatherSummary,
+import {
+  createShootId,
+  type ShootPlan,
+  type ShootType,
+  type ShootWeatherSummary,
 } from "@/lib/shootStorage";
+
+import type {
+  ShootWeatherForecast,
+} from "@/lib/shootWeatherTool";
 
 type EditShootForm = {
   title: string;
+  location: string;
+  date: string;
+  recommendedTime: string;
+  shotListText: string;
+  equipmentText: string;
+  notes: string;
+};
+
+type ManualShootForm = {
+  title: string;
+  shootType: ShootType;
   location: string;
   date: string;
   recommendedTime: string;
@@ -51,6 +67,15 @@ type UpcomingShootsProps = {
   onUpdateShoot: (
     updatedPlan: ShootPlan,
   ) => void;
+
+  onCreateShoot: (
+    newPlan: ShootPlan,
+  ) => void;
+
+  onCheckManualWeather: (
+    location: string,
+    date: string,
+  ) => Promise<ShootWeatherForecast>;
 
   onToggleShot: (
     shootId: string,
@@ -342,6 +367,54 @@ function getShootDateAlert(
   };
 }
 
+function buildManualWeatherSummary(
+  forecast: ShootWeatherForecast,
+  recommendedTime: string,
+): ShootWeatherSummary {
+  const description =
+    recommendedTime.toLowerCase();
+
+  const selectedGoldenHour =
+    description.includes("morning") ||
+    description.includes("sunrise")
+      ? forecast.sunlight.morningGoldenHour
+      : forecast.sunlight.eveningGoldenHour;
+
+  return {
+    minimumTemperature:
+      forecast.dailySummary.minimumTemperature,
+    maximumTemperature:
+      forecast.dailySummary.maximumTemperature,
+    rainProbability:
+      forecast.dailySummary.maximumRainProbability,
+    maximumWindSpeed:
+      forecast.dailySummary.maximumWindSpeed,
+    maximumWindGusts:
+      forecast.dailySummary.maximumWindGusts,
+    goldenHourStart:
+      selectedGoldenHour.start,
+    goldenHourEnd:
+      selectedGoldenHour.end,
+    temperatureUnit:
+      forecast.dailySummary.units.temperature,
+    rainProbabilityUnit:
+      forecast.dailySummary.units.rainProbability,
+    windSpeedUnit:
+      forecast.dailySummary.units.windSpeed,
+  };
+}
+
+function formatSunlightRange(
+  start: string | null,
+  end: string | null,
+): string {
+  if (start && end) {
+    return `${start}–${end}`;
+  }
+
+  return start ?? end ?? "Not available";
+}
+
 function getDateAlertBadgeClass(
   kind: ShootDateAlertKind,
 ): string {
@@ -375,6 +448,8 @@ export function UpcomingShoots({
   onDelete,
   onRefreshWeather,
   onUpdateShoot,
+  onCreateShoot,
+  onCheckManualWeather,
   onToggleShot,
   onToggleEquipment,
 }: UpcomingShootsProps) {
@@ -387,6 +462,38 @@ export function UpcomingShoots({
     editingShootId,
     setEditingShootId,
   ] = useState<string | null>(null);
+
+  const [
+    isAddingManualShoot,
+    setIsAddingManualShoot,
+  ] = useState(false);
+
+  const [
+    isCheckingManualWeather,
+    setIsCheckingManualWeather,
+  ] = useState(false);
+
+  const [
+    manualWeatherForecast,
+    setManualWeatherForecast,
+  ] = useState<ShootWeatherForecast | null>(
+    null,
+  );
+
+  const [manualFormMessage, setManualFormMessage] =
+    useState("");
+
+  const [manualForm, setManualForm] =
+    useState<ManualShootForm>({
+      title: "",
+      shootType: "photography",
+      location: "",
+      date: "",
+      recommendedTime: "",
+      shotListText: "",
+      equipmentText: "",
+      notes: "",
+    });
 
   const [searchQuery, setSearchQuery] =
     useState("");
@@ -478,6 +585,14 @@ export function UpcomingShoots({
     typeFilter !== "all" ||
     statusFilter !== "all" ||
     sortOrder !== "date-ascending";
+
+  const manualWeatherSummary =
+    manualWeatherForecast
+      ? buildManualWeatherSummary(
+          manualWeatherForecast,
+          manualForm.recommendedTime,
+        )
+      : null;
 
   const plannedShootCount =
     plans.filter(
@@ -610,6 +725,121 @@ export function UpcomingShoots({
       };
     },
   );
+
+  function updateManualFormField(
+    field: keyof ManualShootForm,
+    value: string,
+  ) {
+    setManualForm((currentForm) => ({
+      ...currentForm,
+      [field]: value,
+    }));
+
+    if (field === "location" || field === "date") {
+      setManualWeatherForecast(null);
+      setManualFormMessage("");
+    }
+  }
+
+  function resetManualShootForm() {
+    setManualForm({
+      title: "",
+      shootType: "photography",
+      location: "",
+      date: "",
+      recommendedTime: "",
+      shotListText: "",
+      equipmentText: "",
+      notes: "",
+    });
+
+    setManualWeatherForecast(null);
+    setManualFormMessage("");
+    setIsAddingManualShoot(false);
+  }
+
+  async function checkManualShootWeather() {
+    const location = manualForm.location.trim();
+    const date = manualForm.date;
+
+    if (!location || !date) {
+      setManualFormMessage(
+        "Enter a location and date first.",
+      );
+      return;
+    }
+
+    try {
+      setIsCheckingManualWeather(true);
+      setManualFormMessage("");
+
+      const forecast =
+        await onCheckManualWeather(
+          location,
+          date,
+        );
+
+      setManualWeatherForecast(forecast);
+      setManualFormMessage(
+        "Weather checked. It will be saved with the shoot.",
+      );
+    } catch (error) {
+      setManualWeatherForecast(null);
+      setManualFormMessage(
+        error instanceof Error
+          ? error.message
+          : "The weather could not be checked.",
+      );
+    } finally {
+      setIsCheckingManualWeather(false);
+    }
+  }
+
+  function createManualShoot() {
+    const title = manualForm.title.trim();
+    const location = manualForm.location.trim();
+    const date = manualForm.date;
+
+    if (!title || !location || !date) {
+      setManualFormMessage(
+        "Title, location and date are required.",
+      );
+      return;
+    }
+
+    const shotList = manualForm.shotListText
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const equipment = manualForm.equipmentText
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const now = new Date().toISOString();
+
+    onCreateShoot({
+      id: createShootId(),
+      title,
+      shootType: manualForm.shootType,
+      location,
+      date,
+      recommendedTime:
+        manualForm.recommendedTime.trim(),
+      status: "planned",
+      shotList,
+      equipment,
+      completedShots: [],
+      packedEquipment: [],
+      notes: manualForm.notes.trim(),
+      weather: manualWeatherSummary,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    resetManualShootForm();
+  }
 
   function toggleDetails(
     shootId: string,
@@ -791,6 +1021,22 @@ export function UpcomingShoots({
                   : "shoots"}
               </div>
 
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAddingManualShoot(
+                    (currentValue) =>
+                      !currentValue,
+                  );
+                  setManualFormMessage("");
+                }}
+                className="rounded-xl border border-blue-900 px-4 py-2 text-sm font-medium text-blue-300 transition hover:bg-blue-950/50"
+              >
+                {isAddingManualShoot
+                  ? "Close manual form"
+                  : "Add shoot manually"}
+              </button>
+
               <div className="flex rounded-xl border border-neutral-700 bg-neutral-950 p-1">
                 <button
                   type="button"
@@ -823,6 +1069,266 @@ export function UpcomingShoots({
             </div>
           )}
         </div>
+
+        {isAddingManualShoot && (
+          <div className="mt-5 rounded-2xl border border-blue-900/60 bg-neutral-950/60 p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-400">
+              Manual shoot
+            </p>
+
+            <h3 className="mt-1 text-xl font-semibold text-white">
+              Create a shoot without AI
+            </h3>
+
+            <p className="mt-2 text-sm text-neutral-500">
+              Put each shot-list and equipment item on a separate line.
+              Weather checking is optional.
+            </p>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <label className="text-sm text-neutral-300">
+                Title
+                <input
+                  type="text"
+                  value={manualForm.title}
+                  onChange={(event) =>
+                    updateManualFormField(
+                      "title",
+                      event.target.value,
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                />
+              </label>
+
+              <label className="text-sm text-neutral-300">
+                Shoot type
+                <select
+                  value={manualForm.shootType}
+                  onChange={(event) =>
+                    updateManualFormField(
+                      "shootType",
+                      event.target.value,
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                >
+                  <option value="photography">Photography</option>
+                  <option value="videography">Videography</option>
+                  <option value="drone">Drone</option>
+                </select>
+              </label>
+
+              <label className="text-sm text-neutral-300">
+                Location
+                <input
+                  type="text"
+                  value={manualForm.location}
+                  onChange={(event) =>
+                    updateManualFormField(
+                      "location",
+                      event.target.value,
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                />
+              </label>
+
+              <label className="text-sm text-neutral-300">
+                Date
+                <input
+                  type="date"
+                  value={manualForm.date}
+                  onChange={(event) =>
+                    updateManualFormField(
+                      "date",
+                      event.target.value,
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                />
+              </label>
+
+              <label className="text-sm text-neutral-300 md:col-span-2">
+                Recommended time
+                <input
+                  type="text"
+                  value={manualForm.recommendedTime}
+                  onChange={(event) =>
+                    updateManualFormField(
+                      "recommendedTime",
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Evening golden hour"
+                  className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none placeholder:text-neutral-600 focus:border-neutral-500"
+                />
+              </label>
+
+              <label className="text-sm text-neutral-300">
+                Shot list
+                <textarea
+                  value={manualForm.shotListText}
+                  onChange={(event) =>
+                    updateManualFormField(
+                      "shotListText",
+                      event.target.value,
+                    )
+                  }
+                  rows={6}
+                  className="mt-2 w-full resize-y rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                />
+              </label>
+
+              <label className="text-sm text-neutral-300">
+                Equipment
+                <textarea
+                  value={manualForm.equipmentText}
+                  onChange={(event) =>
+                    updateManualFormField(
+                      "equipmentText",
+                      event.target.value,
+                    )
+                  }
+                  rows={6}
+                  className="mt-2 w-full resize-y rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                />
+              </label>
+
+              <label className="text-sm text-neutral-300 md:col-span-2">
+                Preparation notes
+                <textarea
+                  value={manualForm.notes}
+                  onChange={(event) =>
+                    updateManualFormField(
+                      "notes",
+                      event.target.value,
+                    )
+                  }
+                  rows={4}
+                  className="mt-2 w-full resize-y rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={checkManualShootWeather}
+                disabled={
+                  isCheckingManualWeather ||
+                  !manualForm.location.trim() ||
+                  !manualForm.date
+                }
+                className="rounded-xl border border-blue-900 px-5 py-2.5 text-sm font-medium text-blue-300 transition hover:bg-blue-950/50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isCheckingManualWeather
+                  ? "Checking weather..."
+                  : manualWeatherForecast
+                    ? "Check weather again"
+                    : "Check weather"}
+              </button>
+
+              <button
+                type="button"
+                onClick={createManualShoot}
+                disabled={
+                  !manualForm.title.trim() ||
+                  !manualForm.location.trim() ||
+                  !manualForm.date
+                }
+                className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Create shoot
+              </button>
+
+              <button
+                type="button"
+                onClick={resetManualShootForm}
+                className="rounded-xl border border-neutral-700 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {manualFormMessage && (
+              <p className="mt-4 text-sm text-neutral-400">
+                {manualFormMessage}
+              </p>
+            )}
+
+            {manualWeatherForecast && manualWeatherSummary && (
+              <div className="mt-5 rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  Weather preview
+                </p>
+
+                <h4 className="mt-1 font-semibold text-white">
+                  {manualWeatherForecast.location.name}
+                </h4>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="rounded-xl bg-neutral-950 p-4">
+                    <p className="text-xs text-neutral-500">Temperature</p>
+                    <p className="mt-2 text-neutral-200">
+                      {formatTemperatureRange(manualWeatherSummary)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-neutral-950 p-4">
+                    <p className="text-xs text-neutral-500">Rain</p>
+                    <p className="mt-2 text-neutral-200">
+                      {formatWeatherMetric(
+                        manualWeatherSummary.rainProbability,
+                        manualWeatherSummary.rainProbabilityUnit ?? "%",
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-neutral-950 p-4">
+                    <p className="text-xs text-neutral-500">Wind</p>
+                    <p className="mt-2 text-neutral-200">
+                      {formatWeatherMetric(
+                        manualWeatherSummary.maximumWindSpeed,
+                        manualWeatherSummary.windSpeedUnit ?? "km/h",
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-neutral-950 p-4">
+                    <p className="text-xs text-neutral-500">Wind gusts</p>
+                    <p className="mt-2 text-neutral-200">
+                      {formatWeatherMetric(
+                        manualWeatherSummary.maximumWindGusts,
+                        manualWeatherSummary.windSpeedUnit ?? "km/h",
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-neutral-950 p-4">
+                    <p className="text-xs text-neutral-500">Morning golden hour</p>
+                    <p className="mt-2 text-neutral-200">
+                      {formatSunlightRange(
+                        manualWeatherForecast.sunlight.morningGoldenHour.start,
+                        manualWeatherForecast.sunlight.morningGoldenHour.end,
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-neutral-950 p-4">
+                    <p className="text-xs text-neutral-500">Evening golden hour</p>
+                    <p className="mt-2 text-neutral-200">
+                      {formatSunlightRange(
+                        manualWeatherForecast.sunlight.eveningGoldenHour.start,
+                        manualWeatherForecast.sunlight.eveningGoldenHour.end,
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {plans.length > 0 && (
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
