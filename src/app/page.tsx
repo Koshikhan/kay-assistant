@@ -1,5 +1,5 @@
 "use client";
-
+import { LogoutButton } from "@/components/LogoutButton";
 import {
   type FormEvent,
   useEffect,
@@ -19,10 +19,13 @@ import { UpcomingShoots } from "@/components/UpcomingShoots";
 import { createShootPlanTool } from "@/lib/shootPlanTool";
 
 import {
-  addShootPlan,
-  deleteShootPlan,
-  loadShootPlans,
-  updateShootPlan,
+  createShootPlanInDatabase,
+  deleteShootPlanFromDatabase,
+  loadShootPlansFromDatabase,
+  updateShootPlanInDatabase,
+} from "@/lib/shootDatabase";
+
+import {
   type ShootPlan,
   type ShootWeatherSummary,
 } from "@/lib/shootStorage";
@@ -259,14 +262,47 @@ export default function Home() {
   }, []);
 
   /**
-   * Load locally saved shoot plans when
-   * the page first opens.
+   * Load the logged-in user's shoot plans from
+   * Supabase when the page first opens.
    */
   useEffect(() => {
-    const savedPlans = loadShootPlans();
+    let isActive = true;
 
-    setShootPlans(savedPlans);
-    setShootPlansLoaded(true);
+    async function loadDatabasePlans() {
+      try {
+        setErrorMessage("");
+
+        const databasePlans =
+          await loadShootPlansFromDatabase();
+
+        if (isActive) {
+          setShootPlans(databasePlans);
+        }
+      } catch (error) {
+        console.warn(
+          "Database shoot loading failed:",
+          error,
+        );
+
+        if (isActive) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "Shoot plans could not be loaded from the database.",
+          );
+        }
+      } finally {
+        if (isActive) {
+          setShootPlansLoaded(true);
+        }
+      }
+    }
+
+    void loadDatabasePlans();
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   async function startConversation() {
@@ -318,8 +354,13 @@ export default function Home() {
 
       const shootPlanTool =
         createShootPlanTool(
-          (updatedPlans) => {
-            setShootPlans(updatedPlans);
+          (newPlan) => {
+            setShootPlans((currentPlans) => [
+              ...currentPlans.filter(
+                (plan) => plan.id !== newPlan.id,
+              ),
+              newPlan,
+            ]);
           },
 
           (recommendedTime) => {
@@ -731,13 +772,34 @@ user asked about weather, timing or requested a shoot plan.
     setMessages([]);
   }
 
-  function handleCreateManualShoot(
+  async function handleCreateManualShoot(
     newPlan: ShootPlan,
   ) {
-    const updatedPlans =
-      addShootPlan(newPlan);
+    try {
+      setErrorMessage("");
 
-    setShootPlans(updatedPlans);
+      await createShootPlanInDatabase(
+        newPlan,
+      );
+
+      setShootPlans((currentPlans) => [
+        ...currentPlans.filter(
+          (plan) => plan.id !== newPlan.id,
+        ),
+        newPlan,
+      ]);
+    } catch (error) {
+      console.warn(
+        "Manual shoot creation failed:",
+        error,
+      );
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "The shoot plan could not be created.",
+      );
+    }
   }
 
   async function handleCheckManualWeather(
@@ -775,6 +837,47 @@ user asked about weather, timing or requested a shoot plan.
     }
   }
 
+  async function persistUpdatedShoot(
+    updatedPlan: ShootPlan,
+    fallbackMessage: string,
+  ): Promise<boolean> {
+    const planToSave: ShootPlan = {
+      ...updatedPlan,
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      setErrorMessage("");
+
+      await updateShootPlanInDatabase(
+        planToSave,
+      );
+
+      setShootPlans((currentPlans) =>
+        currentPlans.map((plan) =>
+          plan.id === planToSave.id
+            ? planToSave
+            : plan,
+        ),
+      );
+
+      return true;
+    } catch (error) {
+      console.warn(
+        "Shoot plan update failed:",
+        error,
+      );
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : fallbackMessage,
+      );
+
+      return false;
+    }
+  }
+
   function handleToggleShootStatus(
     shootId: string,
   ) {
@@ -795,10 +898,10 @@ user asked about weather, timing or requested a shoot plan.
           : "planned",
     };
 
-    const updatedPlans =
-      updateShootPlan(updatedPlan);
-
-    setShootPlans(updatedPlans);
+    void persistUpdatedShoot(
+      updatedPlan,
+      "The shoot status could not be updated.",
+    );
   }
 
   function handleToggleShot(
@@ -829,10 +932,10 @@ user asked about weather, timing or requested a shoot plan.
         updatedCompletedShots,
     };
 
-    const updatedPlans =
-      updateShootPlan(updatedPlan);
-
-    setShootPlans(updatedPlans);
+    void persistUpdatedShoot(
+      updatedPlan,
+      "The shot checklist could not be updated.",
+    );
   }
 
   function handleToggleEquipment(
@@ -866,19 +969,19 @@ user asked about weather, timing or requested a shoot plan.
         updatedPackedEquipment,
     };
 
-    const updatedPlans =
-      updateShootPlan(updatedPlan);
-
-    setShootPlans(updatedPlans);
+    void persistUpdatedShoot(
+      updatedPlan,
+      "The equipment checklist could not be updated.",
+    );
   }
 
   function handleUpdateShoot(
     updatedPlan: ShootPlan,
   ) {
-    const updatedPlans =
-      updateShootPlan(updatedPlan);
-
-    setShootPlans(updatedPlans);
+    void persistUpdatedShoot(
+      updatedPlan,
+      "The shoot plan could not be updated.",
+    );
   }
 
   async function handleRefreshShootWeather(
@@ -912,10 +1015,15 @@ user asked about weather, timing or requested a shoot plan.
         weather: weatherSummary,
       };
 
-      const updatedPlans =
-        updateShootPlan(updatedPlan);
+      const wasSaved =
+        await persistUpdatedShoot(
+          updatedPlan,
+          "The refreshed weather could not be saved.",
+        );
 
-      setShootPlans(updatedPlans);
+      if (!wasSaved) {
+        return;
+      }
 
       latestForecastRef.current =
         forecast;
@@ -937,7 +1045,7 @@ user asked about weather, timing or requested a shoot plan.
     }
   }
 
-  function handleDeleteShoot(
+  async function handleDeleteShoot(
     shootId: string,
   ) {
     const shouldDelete = window.confirm(
@@ -948,10 +1056,30 @@ user asked about weather, timing or requested a shoot plan.
       return;
     }
 
-    const updatedPlans =
-      deleteShootPlan(shootId);
+    try {
+      setErrorMessage("");
 
-    setShootPlans(updatedPlans);
+      await deleteShootPlanFromDatabase(
+        shootId,
+      );
+
+      setShootPlans((currentPlans) =>
+        currentPlans.filter(
+          (plan) => plan.id !== shootId,
+        ),
+      );
+    } catch (error) {
+      console.warn(
+        "Shoot deletion failed:",
+        error,
+      );
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "The shoot plan could not be deleted.",
+      );
+    }
   }
 
   function getStatusText() {
@@ -1077,10 +1205,12 @@ user asked about weather, timing or requested a shoot plan.
           </p>
 
           <ShootWeatherCard
-            forecast={latestForecast}
-          />
-        </section>
+  forecast={latestForecast}
+/>
 
+<LogoutButton />
+
+</section>
         {/* Conversation transcript */}
         <section className="flex h-[600px] flex-col rounded-3xl border border-neutral-800 bg-neutral-900 shadow-2xl">
           <div className="flex items-center justify-between border-b border-neutral-800 px-6 py-5">

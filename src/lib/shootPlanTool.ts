@@ -2,20 +2,22 @@ import { tool } from "@openai/agents";
 import { z } from "zod";
 
 import {
-  addShootPlan,
+  createShootPlanInDatabase,
+} from "@/lib/shootDatabase";
+
+import {
   createShootId,
   type ShootPlan,
   type ShootWeatherSummary,
 } from "@/lib/shootStorage";
 
 type ShootCreatedCallback = (
-  plans: ShootPlan[],
   newPlan: ShootPlan,
-) => void;
+) => void | Promise<void>;
 
 type GetWeatherSummaryCallback = (
-    recommendedTime: string,
-  ) => ShootWeatherSummary | null;
+  recommendedTime: string,
+) => ShootWeatherSummary | null;
 
 export function createShootPlanTool(
   onShootCreated: ShootCreatedCallback,
@@ -111,12 +113,8 @@ export function createShootPlanTool(
       try {
         const now = new Date().toISOString();
 
-        /*
-         * Retrieve the latest weather summary that
-         * was received before this plan was created.
-         */
         const weatherSummary =
-  getWeatherSummary(recommendedTime);
+          getWeatherSummary(recommendedTime);
 
         const newPlan: ShootPlan = {
           id: createShootId(),
@@ -128,29 +126,26 @@ export function createShootPlanTool(
           status: "planned",
           shotList,
           equipment,
-
           completedShots: [],
           packedEquipment: [],
-
           notes,
           weather: weatherSummary,
           createdAt: now,
           updatedAt: now,
         };
 
-        const updatedPlans =
-          addShootPlan(newPlan);
-
-        onShootCreated(
-          updatedPlans,
+        await createShootPlanInDatabase(
           newPlan,
         );
 
+        await onShootCreated(newPlan);
+
         return JSON.stringify({
           success: true,
+
           message: weatherSummary
-            ? "The shoot plan and weather details were saved."
-            : "The shoot plan was saved.",
+            ? "The shoot plan and weather details were saved to your account."
+            : "The shoot plan was saved to your account.",
 
           shootPlan: newPlan,
         });
@@ -162,8 +157,11 @@ export function createShootPlanTool(
 
         return JSON.stringify({
           success: false,
+
           error:
-            "The shoot plan could not be saved.",
+            error instanceof Error
+              ? error.message
+              : "The shoot plan could not be saved.",
         });
       }
     },
