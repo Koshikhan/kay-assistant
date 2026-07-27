@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import type {
   ShootPlan,
   ShootType,
@@ -10,6 +12,14 @@ type UpcomingShootsProps = {
   isLoaded: boolean;
   onToggleStatus: (shootId: string) => void;
   onDelete: (shootId: string) => void;
+  onToggleShot: (
+    shootId: string,
+    shot: string,
+  ) => void;
+  onToggleEquipment: (
+    shootId: string,
+    equipment: string,
+  ) => void;
 };
 
 function formatShootDate(
@@ -68,13 +78,30 @@ export function UpcomingShoots({
   isLoaded,
   onToggleStatus,
   onDelete,
+  onToggleShot,
+  onToggleEquipment,
 }: UpcomingShootsProps) {
+  const [
+    expandedShootId,
+    setExpandedShootId,
+  ] = useState<string | null>(null);
+
   const sortedPlans = [...plans].sort(
     (firstPlan, secondPlan) =>
       firstPlan.date.localeCompare(
         secondPlan.date,
       ),
   );
+
+  function toggleDetails(
+    shootId: string,
+  ) {
+    setExpandedShootId((currentId) =>
+      currentId === shootId
+        ? null
+        : shootId,
+    );
+  }
 
   return (
     <section className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl lg:col-span-2">
@@ -123,9 +150,9 @@ export function UpcomingShoots({
           </h3>
 
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-500">
-            Kay will soon be able to create and
-            save photography, videography and
-            drone shoot plans here.
+            Ask Kay to create and save a
+            photography, videography or drone
+            shoot plan.
           </p>
         </div>
       ) : (
@@ -134,13 +161,26 @@ export function UpcomingShoots({
             const isCompleted =
               plan.status === "completed";
 
+            const isExpanded =
+              expandedShootId === plan.id;
+
+            const completedShots =
+              plan.completedShots ?? [];
+
+            const packedEquipment =
+              plan.packedEquipment ?? [];
+
             return (
               <article
                 key={plan.id}
                 className={`rounded-2xl border p-5 transition ${
                   isCompleted
-                    ? "border-neutral-800 bg-neutral-950/40 opacity-70"
+                    ? "border-neutral-800 bg-neutral-950/40 opacity-75"
                     : "border-neutral-700 bg-neutral-950/70"
+                } ${
+                  isExpanded
+                    ? "md:col-span-2"
+                    : ""
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -159,7 +199,7 @@ export function UpcomingShoots({
                       </p>
 
                       <h3
-                        className={`mt-1 truncate font-semibold ${
+                        className={`mt-1 font-semibold ${
                           isCompleted
                             ? "text-neutral-500 line-through"
                             : "text-white"
@@ -190,7 +230,9 @@ export function UpcomingShoots({
                     </span>
 
                     <span className="text-right text-neutral-200">
-                      {formatShootDate(plan.date)}
+                      {formatShootDate(
+                        plan.date,
+                      )}
                     </span>
                   </div>
 
@@ -199,13 +241,13 @@ export function UpcomingShoots({
                       Location
                     </span>
 
-                    <span className="truncate text-right text-neutral-200">
+                    <span className="text-right text-neutral-200">
                       {plan.location}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-neutral-500">
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="shrink-0 text-neutral-500">
                       Recommended time
                     </span>
 
@@ -217,32 +259,168 @@ export function UpcomingShoots({
 
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-neutral-500">
-                      Shot list
+                      Shots completed
                     </span>
 
                     <span className="text-neutral-200">
-                      {plan.shotList.length} items
+                      {completedShots.length}/
+                      {plan.shotList.length}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-neutral-500">
-                      Equipment
+                      Equipment packed
                     </span>
 
                     <span className="text-neutral-200">
-                      {plan.equipment.length} items
+                      {packedEquipment.length}/
+                      {plan.equipment.length}
                     </span>
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-neutral-800 pt-5">
+                {isExpanded && (
+                  <div className="mt-6 grid gap-6 border-t border-neutral-800 pt-6 md:grid-cols-2">
+                    <div>
+                      <h4 className="font-semibold text-white">
+                        Shot list
+                      </h4>
+
+                      <div className="mt-3 space-y-2">
+                        {plan.shotList.map(
+                          (shot, index) => {
+                            const checked =
+                              completedShots.includes(
+                                shot,
+                              );
+
+                            return (
+                              <button
+                                key={`${plan.id}-shot-${index}`}
+                                type="button"
+                                onClick={() =>
+                                  onToggleShot(
+                                    plan.id,
+                                    shot,
+                                  )
+                                }
+                                className="flex w-full items-start gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-left transition hover:border-neutral-700"
+                              >
+                                <span
+                                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs ${
+                                    checked
+                                      ? "border-green-600 bg-green-600 text-white"
+                                      : "border-neutral-600"
+                                  }`}
+                                >
+                                  {checked
+                                    ? "✓"
+                                    : ""}
+                                </span>
+
+                                <span
+                                  className={
+                                    checked
+                                      ? "text-neutral-500 line-through"
+                                      : "text-neutral-200"
+                                  }
+                                >
+                                  {shot}
+                                </span>
+                              </button>
+                            );
+                          },
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-white">
+                        Equipment checklist
+                      </h4>
+
+                      <div className="mt-3 space-y-2">
+                        {plan.equipment.map(
+                          (item, index) => {
+                            const checked =
+                              packedEquipment.includes(
+                                item,
+                              );
+
+                            return (
+                              <button
+                                key={`${plan.id}-equipment-${index}`}
+                                type="button"
+                                onClick={() =>
+                                  onToggleEquipment(
+                                    plan.id,
+                                    item,
+                                  )
+                                }
+                                className="flex w-full items-start gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-left transition hover:border-neutral-700"
+                              >
+                                <span
+                                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs ${
+                                    checked
+                                      ? "border-green-600 bg-green-600 text-white"
+                                      : "border-neutral-600"
+                                  }`}
+                                >
+                                  {checked
+                                    ? "✓"
+                                    : ""}
+                                </span>
+
+                                <span
+                                  className={
+                                    checked
+                                      ? "text-neutral-500 line-through"
+                                      : "text-neutral-200"
+                                  }
+                                >
+                                  {item}
+                                </span>
+                              </button>
+                            );
+                          },
+                        )}
+                      </div>
+                    </div>
+
+                    {plan.notes && (
+                      <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 md:col-span-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                          Preparation notes
+                        </p>
+
+                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-300">
+                          {plan.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-5 grid grid-cols-3 gap-3 border-t border-neutral-800 pt-5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toggleDetails(plan.id)
+                    }
+                    className="rounded-xl border border-neutral-700 px-3 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+                  >
+                    {isExpanded
+                      ? "Hide details"
+                      : "View details"}
+                  </button>
+
                   <button
                     type="button"
                     onClick={() =>
                       onToggleStatus(plan.id)
                     }
-                    className="rounded-xl border border-neutral-700 px-4 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+                    className="rounded-xl border border-neutral-700 px-3 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
                   >
                     {isCompleted
                       ? "Mark planned"
@@ -254,7 +432,7 @@ export function UpcomingShoots({
                     onClick={() =>
                       onDelete(plan.id)
                     }
-                    className="rounded-xl border border-red-950 px-4 py-2.5 text-sm font-medium text-red-300 transition hover:bg-red-950/50"
+                    className="rounded-xl border border-red-950 px-3 py-2.5 text-sm font-medium text-red-300 transition hover:bg-red-950/50"
                   >
                     Delete
                   </button>

@@ -27,6 +27,11 @@ export type ShootPlan = {
   status: ShootStatus;
   shotList: string[];
   equipment: string[];
+
+  // Items the user has completed or packed.
+  completedShots?: string[];
+  packedEquipment?: string[];
+
   notes: string;
   weather: ShootWeatherSummary | null;
   createdAt: string;
@@ -63,8 +68,11 @@ function isShootPlan(
   return (
     typeof plan.id === "string" &&
     typeof plan.title === "string" &&
+    typeof plan.shootType === "string" &&
     typeof plan.location === "string" &&
     typeof plan.date === "string" &&
+    typeof plan.recommendedTime === "string" &&
+    typeof plan.status === "string" &&
     Array.isArray(plan.shotList) &&
     Array.isArray(plan.equipment)
   );
@@ -72,6 +80,10 @@ function isShootPlan(
 
 /**
  * Load all saved shoot plans.
+ *
+ * Older saved shoots may not contain
+ * completedShots or packedEquipment,
+ * so empty arrays are added automatically.
  */
 export function loadShootPlans(): ShootPlan[] {
   if (!isBrowser()) {
@@ -93,7 +105,23 @@ export function loadShootPlans(): ShootPlan[] {
       return [];
     }
 
-    return parsedData.filter(isShootPlan);
+    return parsedData
+      .filter(isShootPlan)
+      .map((plan) => ({
+        ...plan,
+
+        completedShots: Array.isArray(
+          plan.completedShots,
+        )
+          ? plan.completedShots
+          : [],
+
+        packedEquipment: Array.isArray(
+          plan.packedEquipment,
+        )
+          ? plan.packedEquipment
+          : [],
+      }));
   } catch (error) {
     console.error(
       "Could not load shoot plans:",
@@ -153,9 +181,17 @@ export function addShootPlan(
 ): ShootPlan[] {
   const currentPlans = loadShootPlans();
 
+  const normalisedPlan: ShootPlan = {
+    ...plan,
+    completedShots:
+      plan.completedShots ?? [],
+    packedEquipment:
+      plan.packedEquipment ?? [],
+  };
+
   const updatedPlans = [
     ...currentPlans,
-    plan,
+    normalisedPlan,
   ];
 
   saveShootPlans(updatedPlans);
@@ -176,6 +212,13 @@ export function updateShootPlan(
       plan.id === updatedPlan.id
         ? {
             ...updatedPlan,
+
+            completedShots:
+              updatedPlan.completedShots ?? [],
+
+            packedEquipment:
+              updatedPlan.packedEquipment ?? [],
+
             updatedAt:
               new Date().toISOString(),
           }

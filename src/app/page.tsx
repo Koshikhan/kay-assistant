@@ -517,6 +517,77 @@ export default function Home() {
     setShootPlans(updatedPlans);
   }
 
+  function handleToggleShot(
+    shootId: string,
+    shot: string,
+  ) {
+    const selectedPlan = shootPlans.find(
+      (plan) => plan.id === shootId,
+    );
+
+    if (!selectedPlan) {
+      return;
+    }
+
+    const completedShots =
+      selectedPlan.completedShots ?? [];
+
+    const updatedCompletedShots =
+      completedShots.includes(shot)
+        ? completedShots.filter(
+            (item) => item !== shot,
+          )
+        : [...completedShots, shot];
+
+    const updatedPlan: ShootPlan = {
+      ...selectedPlan,
+      completedShots:
+        updatedCompletedShots,
+    };
+
+    const updatedPlans =
+      updateShootPlan(updatedPlan);
+
+    setShootPlans(updatedPlans);
+  }
+
+  function handleToggleEquipment(
+    shootId: string,
+    equipment: string,
+  ) {
+    const selectedPlan = shootPlans.find(
+      (plan) => plan.id === shootId,
+    );
+
+    if (!selectedPlan) {
+      return;
+    }
+
+    const packedEquipment =
+      selectedPlan.packedEquipment ?? [];
+
+    const updatedPackedEquipment =
+      packedEquipment.includes(equipment)
+        ? packedEquipment.filter(
+            (item) => item !== equipment,
+          )
+        : [
+            ...packedEquipment,
+            equipment,
+          ];
+
+    const updatedPlan: ShootPlan = {
+      ...selectedPlan,
+      packedEquipment:
+        updatedPackedEquipment,
+    };
+
+    const updatedPlans =
+      updateShootPlan(updatedPlan);
+
+    setShootPlans(updatedPlans);
+  }
+
   function handleDeleteShoot(
     shootId: string,
   ) {
@@ -797,6 +868,12 @@ export default function Home() {
           isLoaded={shootPlansLoaded}
           onToggleStatus={
             handleToggleShootStatus
+          }
+          onToggleShot={
+            handleToggleShot
+          }
+          onToggleEquipment={
+            handleToggleEquipment
           }
           onDelete={handleDeleteShoot}
         />
