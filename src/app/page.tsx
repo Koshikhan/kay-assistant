@@ -23,6 +23,7 @@ import {
   loadShootPlans,
   updateShootPlan,
   type ShootPlan,
+  type ShootWeatherSummary,
 } from "@/lib/shootStorage";
 
 import {
@@ -124,9 +125,74 @@ function getLocalDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Convert the complete forecast into the smaller
+ * weather summary saved with each shoot plan.
+ */
+function buildWeatherSummary(
+  forecast: ShootWeatherForecast,
+  recommendedTime: string,
+): ShootWeatherSummary {
+  const timeDescription =
+    recommendedTime.toLowerCase();
+
+  const prefersMorning =
+    timeDescription.includes("morning") ||
+    timeDescription.includes("sunrise");
+
+  const prefersEvening =
+    timeDescription.includes("evening") ||
+    timeDescription.includes("sunset");
+
+  const selectedGoldenHour =
+    prefersMorning
+      ? forecast.sunlight.morningGoldenHour
+      : prefersEvening
+        ? forecast.sunlight.eveningGoldenHour
+        : forecast.sunlight.eveningGoldenHour.start
+          ? forecast.sunlight.eveningGoldenHour
+          : forecast.sunlight.morningGoldenHour;
+
+  return {
+    minimumTemperature:
+      forecast.dailySummary.minimumTemperature,
+
+    maximumTemperature:
+      forecast.dailySummary.maximumTemperature,
+
+    rainProbability:
+      forecast.dailySummary.maximumRainProbability,
+
+    maximumWindSpeed:
+      forecast.dailySummary.maximumWindSpeed,
+
+    maximumWindGusts:
+      forecast.dailySummary.maximumWindGusts,
+
+    goldenHourStart:
+      selectedGoldenHour.start,
+
+    goldenHourEnd:
+      selectedGoldenHour.end,
+
+      temperatureUnit:
+  forecast.dailySummary.units.temperature,
+
+rainProbabilityUnit:
+  forecast.dailySummary.units
+    .rainProbability,
+
+windSpeedUnit:
+  forecast.dailySummary.units.windSpeed,
+  };
+}
+
 export default function Home() {
   const sessionRef =
     useRef<RealtimeSession | null>(null);
+
+  const latestForecastRef =
+    useRef<ShootWeatherForecast | null>(null);
 
   const transcriptEndRef =
     useRef<HTMLDivElement | null>(null);
@@ -202,6 +268,7 @@ export default function Home() {
       setMessages([]);
       setTextInput("");
       setLatestForecast(null);
+      latestForecastRef.current = null;
 
       const tokenResponse = await fetch(
         "/api/realtime-token",
@@ -228,13 +295,32 @@ export default function Home() {
 
       const shootWeatherTool =
         createShootWeatherTool((forecast) => {
+          latestForecastRef.current =
+            forecast;
+
           setLatestForecast(forecast);
         });
 
       const shootPlanTool =
-        createShootPlanTool((updatedPlans) => {
-          setShootPlans(updatedPlans);
-        });
+        createShootPlanTool(
+          (updatedPlans) => {
+            setShootPlans(updatedPlans);
+          },
+
+          (recommendedTime) => {
+            const forecast =
+              latestForecastRef.current;
+
+            if (!forecast) {
+              return null;
+            }
+
+            return buildWeatherSummary(
+              forecast,
+              recommendedTime,
+            );
+          },
+        );
 
       const agent = new RealtimeAgent({
         name: "Kay Assistant",

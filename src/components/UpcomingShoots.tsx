@@ -5,6 +5,7 @@ import { useState } from "react";
 import type {
   ShootPlan,
   ShootType,
+  ShootWeatherSummary,
 } from "@/lib/shootStorage";
 
 type UpcomingShootsProps = {
@@ -12,10 +13,12 @@ type UpcomingShootsProps = {
   isLoaded: boolean;
   onToggleStatus: (shootId: string) => void;
   onDelete: (shootId: string) => void;
+
   onToggleShot: (
     shootId: string,
     shot: string,
   ) => void;
+
   onToggleEquipment: (
     shootId: string,
     equipment: string,
@@ -71,6 +74,88 @@ function getShootTypeIcon(
     default:
       return "📍";
   }
+}
+
+function formatWeatherNumber(
+  value: number | null,
+): string {
+  if (value === null) {
+    return "Not available";
+  }
+
+  return Number.isInteger(value)
+    ? String(value)
+    : value.toFixed(1);
+}
+
+function formatWeatherMetric(
+  value: number | null,
+  unit: string,
+): string {
+  if (value === null) {
+    return "Not available";
+  }
+
+  return `${formatWeatherNumber(value)} ${unit}`;
+}
+
+function formatTemperatureRange(
+  weather: ShootWeatherSummary,
+): string {
+  const minimum =
+    weather.minimumTemperature;
+
+  const maximum =
+    weather.maximumTemperature;
+
+  const unit =
+    weather.temperatureUnit ?? "°C";
+
+  if (
+    minimum === null &&
+    maximum === null
+  ) {
+    return "Not available";
+  }
+
+  if (minimum === null) {
+    return `${formatWeatherNumber(
+      maximum,
+    )} ${unit}`;
+  }
+
+  if (maximum === null) {
+    return `${formatWeatherNumber(
+      minimum,
+    )} ${unit}`;
+  }
+
+  return `${formatWeatherNumber(
+    minimum,
+  )}–${formatWeatherNumber(
+    maximum,
+  )} ${unit}`;
+}
+
+function formatGoldenHour(
+  weather: ShootWeatherSummary,
+): string {
+  const start = weather.goldenHourStart;
+  const end = weather.goldenHourEnd;
+
+  if (start && end) {
+    return `${start}–${end}`;
+  }
+
+  if (start) {
+    return `From ${start}`;
+  }
+
+  if (end) {
+    return `Until ${end}`;
+  }
+
+  return "Not available";
 }
 
 export function UpcomingShoots({
@@ -282,6 +367,99 @@ export function UpcomingShoots({
 
                 {isExpanded && (
                   <div className="mt-6 grid gap-6 border-t border-neutral-800 pt-6 md:grid-cols-2">
+                    {plan.weather && (
+                      <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-5 md:col-span-2">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                            Saved weather
+                          </p>
+
+                          <h4 className="mt-1 font-semibold text-white">
+                            Shoot conditions
+                          </h4>
+
+                          <p className="mt-1 text-xs text-neutral-500">
+                            Forecast saved when this
+                            shoot plan was created.
+                          </p>
+                        </div>
+
+                        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                          <div className="rounded-xl bg-neutral-950 p-4">
+                            <p className="text-xs text-neutral-500">
+                              Temperature
+                            </p>
+
+                            <p className="mt-2 font-medium text-neutral-200">
+                              {formatTemperatureRange(
+                                plan.weather,
+                              )}
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl bg-neutral-950 p-4">
+                            <p className="text-xs text-neutral-500">
+                              Rain
+                            </p>
+
+                            <p className="mt-2 font-medium text-neutral-200">
+                              {formatWeatherMetric(
+                                plan.weather
+                                  .rainProbability,
+                                plan.weather
+                                  .rainProbabilityUnit ??
+                                  "%",
+                              )}
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl bg-neutral-950 p-4">
+                            <p className="text-xs text-neutral-500">
+                              Wind
+                            </p>
+
+                            <p className="mt-2 font-medium text-neutral-200">
+                              {formatWeatherMetric(
+                                plan.weather
+                                  .maximumWindSpeed,
+                                plan.weather
+                                  .windSpeedUnit ??
+                                  "km/h",
+                              )}
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl bg-neutral-950 p-4">
+                            <p className="text-xs text-neutral-500">
+                              Wind gusts
+                            </p>
+
+                            <p className="mt-2 font-medium text-neutral-200">
+                              {formatWeatherMetric(
+                                plan.weather
+                                  .maximumWindGusts,
+                                plan.weather
+                                  .windSpeedUnit ??
+                                  "km/h",
+                              )}
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl bg-neutral-950 p-4">
+                            <p className="text-xs text-neutral-500">
+                              Golden hour
+                            </p>
+
+                            <p className="mt-2 font-medium text-neutral-200">
+                              {formatGoldenHour(
+                                plan.weather,
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <h4 className="font-semibold text-white">
                         Shot list

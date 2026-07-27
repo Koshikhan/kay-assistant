@@ -8,14 +8,18 @@ export type ShootStatus =
   | "completed";
 
 export type ShootWeatherSummary = {
-  minimumTemperature: number | null;
-  maximumTemperature: number | null;
-  rainProbability: number | null;
-  maximumWindSpeed: number | null;
-  maximumWindGusts: number | null;
-  goldenHourStart: string | null;
-  goldenHourEnd: string | null;
-};
+    minimumTemperature: number | null;
+    maximumTemperature: number | null;
+    rainProbability: number | null;
+    maximumWindSpeed: number | null;
+    maximumWindGusts: number | null;
+    goldenHourStart: string | null;
+    goldenHourEnd: string | null;
+  
+    temperatureUnit?: string;
+    rainProbabilityUnit?: string;
+    windSpeedUnit?: string;
+  };
 
 export type ShootPlan = {
   id: string;

@@ -5,6 +5,7 @@ import {
   addShootPlan,
   createShootId,
   type ShootPlan,
+  type ShootWeatherSummary,
 } from "@/lib/shootStorage";
 
 type ShootCreatedCallback = (
@@ -12,8 +13,14 @@ type ShootCreatedCallback = (
   newPlan: ShootPlan,
 ) => void;
 
+type GetWeatherSummaryCallback = (
+    recommendedTime: string,
+  ) => ShootWeatherSummary | null;
+
 export function createShootPlanTool(
   onShootCreated: ShootCreatedCallback,
+  getWeatherSummary:
+    GetWeatherSummaryCallback = () => null,
 ) {
   return tool({
     name: "create_shoot_plan",
@@ -56,7 +63,9 @@ export function createShootPlanTool(
           /^\d{4}-\d{2}-\d{2}$/,
           "The date must use YYYY-MM-DD format.",
         )
-        .describe("The shoot date in YYYY-MM-DD format."),
+        .describe(
+          "The shoot date in YYYY-MM-DD format.",
+        ),
 
       recommendedTime: z
         .string()
@@ -102,6 +111,13 @@ export function createShootPlanTool(
       try {
         const now = new Date().toISOString();
 
+        /*
+         * Retrieve the latest weather summary that
+         * was received before this plan was created.
+         */
+        const weatherSummary =
+  getWeatherSummary(recommendedTime);
+
         const newPlan: ShootPlan = {
           id: createShootId(),
           title,
@@ -112,8 +128,12 @@ export function createShootPlanTool(
           status: "planned",
           shotList,
           equipment,
+
+          completedShots: [],
+          packedEquipment: [],
+
           notes,
-          weather: null,
+          weather: weatherSummary,
           createdAt: now,
           updatedAt: now,
         };
@@ -128,7 +148,10 @@ export function createShootPlanTool(
 
         return JSON.stringify({
           success: true,
-          message: "The shoot plan was saved.",
+          message: weatherSummary
+            ? "The shoot plan and weather details were saved."
+            : "The shoot plan was saved.",
+
           shootPlan: newPlan,
         });
       } catch (error) {
