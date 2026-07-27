@@ -1,76 +1,164 @@
-import { tool } from "@openai/agents/realtime";
+import { tool } from "@openai/agents";
 import { z } from "zod";
 
-type ShootWeatherError = {
-  error?: string;
+export type ShootWeatherForecast = {
+  location: {
+    requestedName: string;
+    name: string;
+    region: string | null;
+    country: string | null;
+    countryCode: string | null;
+    latitude: number;
+    longitude: number;
+    timezone: string;
+  };
+
+  date: string;
+
+  sunlight: {
+    dawn: string | null;
+    sunrise: string | null;
+
+    morningGoldenHour: {
+      start: string | null;
+      end: string | null;
+    };
+
+    eveningGoldenHour: {
+      start: string | null;
+      end: string | null;
+    };
+
+    sunset: string | null;
+    dusk: string | null;
+  };
+
+  dailySummary: {
+    minimumTemperature: number | null;
+    maximumTemperature: number | null;
+    maximumRainProbability: number | null;
+    maximumWindSpeed: number | null;
+    maximumWindGusts: number | null;
+
+    units: {
+      temperature: string;
+      rainProbability: string;
+      windSpeed: string;
+    };
+  };
+
+  hourlyForecast: Array<{
+    time: string;
+    temperature: number | null;
+    rainProbability: number | null;
+    cloudCover: number | null;
+    windSpeed: number | null;
+    windGusts: number | null;
+    visibilityKm: number | null;
+  }>;
 };
 
-export const shootWeatherTool = tool({
-  name: "get_shoot_weather",
+type ShootWeatherError = {
+  error: string;
+};
 
-  description: `
-    Get real weather, wind, rain probability, cloud cover,
-    visibility, sunrise, sunset and golden-hour information
-    for planning a photography or drone shoot.
+type WeatherToolCallback = (
+  forecast: ShootWeatherForecast,
+) => void;
 
-    Use this whenever the user asks about:
-    - Weather for a shoot
-    - Best photography time
-    - Golden hour
-    - Sunrise or sunset
-    - Wind conditions
-    - Drone filming conditions
-  `,
+export function createShootWeatherTool(
+  onForecastReceived: WeatherToolCallback,
+) {
+  return tool({
+    name: "get_shoot_weather",
 
-  parameters: z.object({
-    location: z
-      .string()
-      .min(2)
-      .describe(
-        "The city, town or location, for example Brighton or London.",
-      ),
+    description: `
+      Retrieve real weather and sunlight information for
+      planning photography, videography or drone shoots.
 
-    date: z
-      .string()
-      .regex(
-        /^\d{4}-\d{2}-\d{2}$/,
-        "The date must use YYYY-MM-DD format.",
-      )
-      .describe(
-        "The shoot date in YYYY-MM-DD format.",
-      ),
-  }),
+      Use this tool whenever the user asks about:
+      - Weather for a shoot
+      - Golden hour
+      - Sunrise or sunset
+      - Temperature
+      - Rain probability
+      - Cloud cover
+      - Visibility
+      - Wind speed
+      - Wind gusts
+      - The best time for a photography or drone shoot
+    `,
 
-  async execute({ location, date }) {
-    const query = new URLSearchParams({
-      location,
-      date,
-    });
+    parameters: z.object({
+      location: z
+        .string()
+        .min(2)
+        .describe(
+          "The city, town or location, such as Brighton, London or Richmond Park.",
+        ),
 
-    const response = await fetch(
-      `/api/shoot-weather?${query.toString()}`,
-      {
-        method: "GET",
-        cache: "no-store",
-      },
-    );
+      date: z
+        .string()
+        .regex(
+          /^\d{4}-\d{2}-\d{2}$/,
+          "The date must be in YYYY-MM-DD format.",
+        )
+        .describe(
+          "The shoot date in YYYY-MM-DD format.",
+        ),
+    }),
 
-    const data =
-      (await response.json()) as ShootWeatherError &
-        Record<string, unknown>;
+    async execute({ location, date }) {
+      try {
+        const searchParams = new URLSearchParams({
+          location,
+          date,
+        });
 
-    if (!response.ok) {
-      return {
-        success: false,
-        error:
-          data.error ??
-          "The shoot forecast could not be retrieved.",
-      };
-    }
+        const response = await fetch(
+          `/api/shoot-weather?${searchParams.toString()}`,
+          {
+            method: "GET",
+            cache: "no-store",
+          },
+        );
 
-    return {
-      success: true,
-      forecast: data,
-    };
-  },
-});
+        const data = (await response.json()) as
+          | ShootWeatherForecast
+          | ShootWeatherError;
+
+        if (!response.ok || "error" in data) {
+          return JSON.stringify({
+            success: false,
+            error:
+              "error" in data
+                ? data.error
+                : "The shoot forecast could not be retrieved.",
+          });
+        }
+
+        const forecast = data as ShootWeatherForecast;
+
+        // Display the forecast inside the React weather card.
+        onForecastReceived(forecast);
+
+        // Return the forecast to Kay Assistant.
+        return JSON.stringify({
+          success: true,
+          forecast,
+        });
+      } catch (error) {
+        console.error(
+          "Shoot weather tool error:",
+          error,
+        );
+
+        return JSON.stringify({
+          success: false,
+          error:
+            "The application could not connect to the shoot weather service.",
+        });
+      }
+    },
+  });
+}

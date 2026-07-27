@@ -13,7 +13,12 @@ import {
   type RealtimeItem,
 } from "@openai/agents/realtime";
 
-import { shootWeatherTool } from "@/lib/shootWeatherTool";
+import {
+  createShootWeatherTool,
+  type ShootWeatherForecast,
+} from "@/lib/shootWeatherTool";
+
+import { ShootWeatherCard } from "@/components/ShootWeatherCard";
 
 type ConnectionStatus =
   | "disconnected"
@@ -133,6 +138,8 @@ export default function Home() {
 
   const [errorMessage, setErrorMessage] =
     useState("");
+    const [latestForecast, setLatestForecast] =
+  useState<ShootWeatherForecast | null>(null);
 
   /**
    * Scroll to the newest message whenever
@@ -167,6 +174,7 @@ export default function Home() {
       setErrorMessage("");
       setMessages([]);
       setTextInput("");
+      setLatestForecast(null);
 
       const tokenResponse = await fetch(
         "/api/realtime-token",
@@ -190,6 +198,10 @@ export default function Home() {
       }
 
       const currentDate = getLocalDateString();
+      const shootWeatherTool =
+  createShootWeatherTool((forecast) => {
+    setLatestForecast(forecast);
+  });
 
       const agent = new RealtimeAgent({
         name: "Kay Assistant",
@@ -517,6 +529,7 @@ export default function Home() {
             Your microphone is active only during
             a voice conversation.
           </p>
+          <ShootWeatherCard forecast={latestForecast} />
         </section>
 
         {/* Conversation transcript */}
