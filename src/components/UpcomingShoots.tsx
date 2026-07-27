@@ -18,6 +18,20 @@ type EditShootForm = {
   notes: string;
 };
 
+type ShootTypeFilter =
+  | "all"
+  | ShootType;
+
+type ShootStatusFilter =
+  | "all"
+  | "planned"
+  | "completed";
+
+type ShootSortOrder =
+  | "date-ascending"
+  | "date-descending"
+  | "recently-updated";
+
 type UpcomingShootsProps = {
   plans: ShootPlan[];
   isLoaded: boolean;
@@ -199,6 +213,20 @@ export function UpcomingShoots({
     setEditingShootId,
   ] = useState<string | null>(null);
 
+  const [searchQuery, setSearchQuery] =
+    useState("");
+
+  const [typeFilter, setTypeFilter] =
+    useState<ShootTypeFilter>("all");
+
+  const [statusFilter, setStatusFilter] =
+    useState<ShootStatusFilter>("all");
+
+  const [sortOrder, setSortOrder] =
+    useState<ShootSortOrder>(
+      "date-ascending",
+    );
+
   const [editForm, setEditForm] =
     useState<EditShootForm>({
       title: "",
@@ -210,12 +238,57 @@ export function UpcomingShoots({
       notes: "",
     });
 
-  const sortedPlans = [...plans].sort(
-    (firstPlan, secondPlan) =>
-      firstPlan.date.localeCompare(
+  const normalisedSearch =
+    searchQuery.trim().toLowerCase();
+
+  const filteredPlans = [...plans]
+    .filter((plan) => {
+      const matchesSearch =
+        !normalisedSearch ||
+        plan.title
+          .toLowerCase()
+          .includes(normalisedSearch) ||
+        plan.location
+          .toLowerCase()
+          .includes(normalisedSearch);
+
+      const matchesType =
+        typeFilter === "all" ||
+        plan.shootType === typeFilter;
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        plan.status === statusFilter;
+
+      return (
+        matchesSearch &&
+        matchesType &&
+        matchesStatus
+      );
+    })
+    .sort((firstPlan, secondPlan) => {
+      if (sortOrder === "date-descending") {
+        return secondPlan.date.localeCompare(
+          firstPlan.date,
+        );
+      }
+
+      if (sortOrder === "recently-updated") {
+        return secondPlan.updatedAt.localeCompare(
+          firstPlan.updatedAt,
+        );
+      }
+
+      return firstPlan.date.localeCompare(
         secondPlan.date,
-      ),
-  );
+      );
+    });
+
+  const hasActiveFilters =
+    Boolean(normalisedSearch) ||
+    typeFilter !== "all" ||
+    statusFilter !== "all" ||
+    sortOrder !== "date-ascending";
 
   function toggleDetails(
     shootId: string,
@@ -225,6 +298,13 @@ export function UpcomingShoots({
         ? null
         : shootId,
     );
+  }
+
+  function clearFilters() {
+    setSearchQuery("");
+    setTypeFilter("all");
+    setStatusFilter("all");
+    setSortOrder("date-ascending");
   }
 
   function beginEditing(
@@ -342,6 +422,7 @@ export function UpcomingShoots({
 
           {plans.length > 0 && (
             <div className="rounded-full bg-neutral-800 px-4 py-2 text-sm text-neutral-300">
+              {filteredPlans.length} of{" "}
               {plans.length}{" "}
               {plans.length === 1
                 ? "shoot"
@@ -349,6 +430,109 @@ export function UpcomingShoots({
             </div>
           )}
         </div>
+
+        {plans.length > 0 && (
+          <div className="mt-5 grid gap-3 rounded-2xl border border-neutral-800 bg-neutral-950/50 p-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))_auto]">
+            <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              Search
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) =>
+                  setSearchQuery(
+                    event.target.value,
+                  )
+                }
+                placeholder="Title or location"
+                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm normal-case tracking-normal text-white outline-none placeholder:text-neutral-600 focus:border-neutral-500"
+              />
+            </label>
+
+            <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              Shoot type
+              <select
+                value={typeFilter}
+                onChange={(event) =>
+                  setTypeFilter(
+                    event.target
+                      .value as ShootTypeFilter,
+                  )
+                }
+                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm normal-case tracking-normal text-white outline-none focus:border-neutral-500"
+              >
+                <option value="all">
+                  All types
+                </option>
+                <option value="photography">
+                  Photography
+                </option>
+                <option value="videography">
+                  Videography
+                </option>
+                <option value="drone">
+                  Drone
+                </option>
+              </select>
+            </label>
+
+            <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              Status
+              <select
+                value={statusFilter}
+                onChange={(event) =>
+                  setStatusFilter(
+                    event.target
+                      .value as ShootStatusFilter,
+                  )
+                }
+                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm normal-case tracking-normal text-white outline-none focus:border-neutral-500"
+              >
+                <option value="all">
+                  All statuses
+                </option>
+                <option value="planned">
+                  Planned
+                </option>
+                <option value="completed">
+                  Completed
+                </option>
+              </select>
+            </label>
+
+            <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              Sort
+              <select
+                value={sortOrder}
+                onChange={(event) =>
+                  setSortOrder(
+                    event.target
+                      .value as ShootSortOrder,
+                  )
+                }
+                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm normal-case tracking-normal text-white outline-none focus:border-neutral-500"
+              >
+                <option value="date-ascending">
+                  Nearest date
+                </option>
+                <option value="date-descending">
+                  Latest date
+                </option>
+                <option value="recently-updated">
+                  Recently updated
+                </option>
+              </select>
+            </label>
+
+            <button
+              type="button"
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+              className="self-end rounded-xl border border-neutral-700 px-4 py-3 text-sm font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
       </div>
 
       {!isLoaded ? (
@@ -357,7 +541,7 @@ export function UpcomingShoots({
             Loading saved shoots...
           </p>
         </div>
-      ) : sortedPlans.length === 0 ? (
+      ) : plans.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-neutral-700 bg-neutral-950/40 p-10 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-neutral-800 text-2xl">
             📅
@@ -373,9 +557,32 @@ export function UpcomingShoots({
             shoot plan.
           </p>
         </div>
+      ) : filteredPlans.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-neutral-700 bg-neutral-950/40 p-10 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-neutral-800 text-2xl">
+            🔎
+          </div>
+
+          <h3 className="mt-4 font-semibold text-white">
+            No matching shoots
+          </h3>
+
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-500">
+            Try changing the search text or
+            clearing the selected filters.
+          </p>
+
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="mt-5 rounded-xl border border-neutral-700 px-4 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+          >
+            Clear filters
+          </button>
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {sortedPlans.map((plan) => {
+          {filteredPlans.map((plan) => {
             const isCompleted =
               plan.status === "completed";
 
