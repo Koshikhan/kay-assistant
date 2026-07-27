@@ -32,6 +32,10 @@ type ShootSortOrder =
   | "date-descending"
   | "recently-updated";
 
+type ShootViewMode =
+  | "list"
+  | "calendar";
+
 type UpcomingShootsProps = {
   plans: ShootPlan[];
   isLoaded: boolean;
@@ -192,6 +196,32 @@ function formatGoldenHour(
   return "Not available";
 }
 
+function formatCalendarMonth(
+  date: Date,
+): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function createDateKey(
+  year: number,
+  monthIndex: number,
+  day: number,
+): string {
+  const month = String(
+    monthIndex + 1,
+  ).padStart(2, "0");
+
+  const date = String(day).padStart(
+    2,
+    "0",
+  );
+
+  return `${year}-${month}-${date}`;
+}
+
 export function UpcomingShoots({
   plans,
   isLoaded,
@@ -226,6 +256,20 @@ export function UpcomingShoots({
     useState<ShootSortOrder>(
       "date-ascending",
     );
+
+  const [viewMode, setViewMode] =
+    useState<ShootViewMode>("list");
+
+  const [calendarMonth, setCalendarMonth] =
+    useState(() => {
+      const currentDate = new Date();
+
+      return new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1,
+      );
+    });
 
   const [editForm, setEditForm] =
     useState<EditShootForm>({
@@ -343,6 +387,85 @@ export function UpcomingShoots({
       );
     }).length;
 
+  const calendarYear =
+    calendarMonth.getFullYear();
+
+  const calendarMonthIndex =
+    calendarMonth.getMonth();
+
+  const firstWeekday =
+    new Date(
+      calendarYear,
+      calendarMonthIndex,
+      1,
+    ).getDay();
+
+  const mondayFirstOffset =
+    (firstWeekday + 6) % 7;
+
+  const daysInCalendarMonth =
+    new Date(
+      calendarYear,
+      calendarMonthIndex + 1,
+      0,
+    ).getDate();
+
+  const calendarCellCount =
+    Math.ceil(
+      (
+        mondayFirstOffset +
+        daysInCalendarMonth
+      ) / 7,
+    ) * 7;
+
+  const todayKey = createDateKey(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+
+  const plansByDate = new Map<
+    string,
+    ShootPlan[]
+  >();
+
+  for (const plan of filteredPlans) {
+    const existingPlans =
+      plansByDate.get(plan.date) ?? [];
+
+    plansByDate.set(
+      plan.date,
+      [...existingPlans, plan],
+    );
+  }
+
+  const calendarCells = Array.from(
+    { length: calendarCellCount },
+    (_, index) => {
+      const day =
+        index - mondayFirstOffset + 1;
+
+      if (
+        day < 1 ||
+        day > daysInCalendarMonth
+      ) {
+        return {
+          day: null,
+          dateKey: null,
+        };
+      }
+
+      return {
+        day,
+        dateKey: createDateKey(
+          calendarYear,
+          calendarMonthIndex,
+          day,
+        ),
+      };
+    },
+  );
+
   function toggleDetails(
     shootId: string,
   ) {
@@ -358,6 +481,46 @@ export function UpcomingShoots({
     setTypeFilter("all");
     setStatusFilter("all");
     setSortOrder("date-ascending");
+  }
+
+  function showPreviousMonth() {
+    setCalendarMonth((currentMonth) =>
+      new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth() - 1,
+        1,
+      ),
+    );
+  }
+
+  function showNextMonth() {
+    setCalendarMonth((currentMonth) =>
+      new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth() + 1,
+        1,
+      ),
+    );
+  }
+
+  function showCurrentMonth() {
+    const currentDate = new Date();
+
+    setCalendarMonth(
+      new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1,
+      ),
+    );
+  }
+
+  function openShootFromCalendar(
+    shootId: string,
+  ) {
+    setViewMode("list");
+    setExpandedShootId(shootId);
+    setEditingShootId(null);
   }
 
   function beginEditing(
@@ -474,12 +637,44 @@ export function UpcomingShoots({
           </div>
 
           {plans.length > 0 && (
-            <div className="rounded-full bg-neutral-800 px-4 py-2 text-sm text-neutral-300">
-              {filteredPlans.length} of{" "}
-              {plans.length}{" "}
-              {plans.length === 1
-                ? "shoot"
-                : "shoots"}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <div className="rounded-full bg-neutral-800 px-4 py-2 text-sm text-neutral-300">
+                {filteredPlans.length} of{" "}
+                {plans.length}{" "}
+                {plans.length === 1
+                  ? "shoot"
+                  : "shoots"}
+              </div>
+
+              <div className="flex rounded-xl border border-neutral-700 bg-neutral-950 p-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setViewMode("list")
+                  }
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    viewMode === "list"
+                      ? "bg-white text-black"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  List
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setViewMode("calendar")
+                  }
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    viewMode === "calendar"
+                      ? "bg-white text-black"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  Calendar
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -696,6 +891,178 @@ export function UpcomingShoots({
           >
             Clear filters
           </button>
+        </div>
+      ) : viewMode === "calendar" ? (
+        <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950/50">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 p-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Calendar view
+              </p>
+
+              <h3 className="mt-1 text-xl font-semibold text-white">
+                {formatCalendarMonth(
+                  calendarMonth,
+                )}
+              </h3>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={showPreviousMonth}
+                className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+              >
+                Previous
+              </button>
+
+              <button
+                type="button"
+                onClick={showCurrentMonth}
+                className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+              >
+                Today
+              </button>
+
+              <button
+                type="button"
+                onClick={showNextMonth}
+                className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <div className="min-w-[900px]">
+              <div className="grid grid-cols-7 border-b border-neutral-800 bg-neutral-900">
+                {[
+                  "Mon",
+                  "Tue",
+                  "Wed",
+                  "Thu",
+                  "Fri",
+                  "Sat",
+                  "Sun",
+                ].map((weekday) => (
+                  <div
+                    key={weekday}
+                    className="border-r border-neutral-800 px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-neutral-500 last:border-r-0"
+                  >
+                    {weekday}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7">
+                {calendarCells.map(
+                  (calendarCell, index) => {
+                    const datePlans =
+                      calendarCell.dateKey
+                        ? plansByDate.get(
+                            calendarCell.dateKey,
+                          ) ?? []
+                        : [];
+
+                    const isToday =
+                      calendarCell.dateKey ===
+                      todayKey;
+
+                    return (
+                      <div
+                        key={`${calendarYear}-${calendarMonthIndex}-${index}`}
+                        className={`min-h-36 border-b border-r border-neutral-800 p-2 ${
+                          calendarCell.day
+                            ? "bg-neutral-950/40"
+                            : "bg-neutral-950/80"
+                        } ${
+                          index % 7 === 6
+                            ? "border-r-0"
+                            : ""
+                        }`}
+                      >
+                        {calendarCell.day && (
+                          <>
+                            <div className="mb-2 flex items-center justify-between">
+                              <span
+                                className={`flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-sm ${
+                                  isToday
+                                    ? "bg-white font-semibold text-black"
+                                    : "text-neutral-400"
+                                }`}
+                              >
+                                {calendarCell.day}
+                              </span>
+
+                              {datePlans.length > 0 && (
+                                <span className="text-xs text-neutral-600">
+                                  {datePlans.length}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="space-y-2">
+                              {datePlans.map(
+                                (plan) => (
+                                  <button
+                                    key={plan.id}
+                                    type="button"
+                                    onClick={() =>
+                                      openShootFromCalendar(
+                                        plan.id,
+                                      )
+                                    }
+                                    title={`${plan.title} — ${plan.location}`}
+                                    className={`w-full rounded-lg border p-2 text-left transition hover:border-neutral-500 ${
+                                      plan.status ===
+                                      "completed"
+                                        ? "border-green-950 bg-green-950/20 opacity-70"
+                                        : "border-neutral-700 bg-neutral-900"
+                                    }`}
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      <span className="shrink-0">
+                                        {getShootTypeIcon(
+                                          plan.shootType,
+                                        )}
+                                      </span>
+
+                                      <span className="min-w-0">
+                                        <span
+                                          className={`block truncate text-xs font-medium ${
+                                            plan.status ===
+                                            "completed"
+                                              ? "text-neutral-500 line-through"
+                                              : "text-neutral-200"
+                                          }`}
+                                        >
+                                          {plan.title}
+                                        </span>
+
+                                        <span className="mt-1 block truncate text-[11px] text-neutral-600">
+                                          {plan.location}
+                                        </span>
+                                      </span>
+                                    </div>
+                                  </button>
+                                ),
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          </div>
+
+          <p className="border-t border-neutral-800 px-4 py-3 text-xs text-neutral-500">
+            Calendar results follow the active search and
+            filters. Select a shoot to open it in list view.
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
