@@ -222,6 +222,151 @@ function createDateKey(
   return `${year}-${month}-${date}`;
 }
 
+type ShootDateAlertKind =
+  | "completed"
+  | "overdue"
+  | "today"
+  | "tomorrow"
+  | "soon"
+  | "this-week"
+  | "planned";
+
+type ShootDateAlert = {
+  kind: ShootDateAlertKind;
+  label: string;
+};
+
+function getShootDateDifference(
+  dateString: string,
+): number | null {
+  const [year, month, day] =
+    dateString
+      .split("-")
+      .map(Number);
+
+  if (
+    !year ||
+    !month ||
+    !day
+  ) {
+    return null;
+  }
+
+  const today = new Date();
+
+  const todayUtc = Date.UTC(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+
+  const shootUtc = Date.UTC(
+    year,
+    month - 1,
+    day,
+  );
+
+  const millisecondsPerDay =
+    24 * 60 * 60 * 1000;
+
+  return Math.round(
+    (shootUtc - todayUtc) /
+      millisecondsPerDay,
+  );
+}
+
+function getShootDateAlert(
+  plan: ShootPlan,
+): ShootDateAlert {
+  if (plan.status === "completed") {
+    return {
+      kind: "completed",
+      label: "Completed",
+    };
+  }
+
+  const difference =
+    getShootDateDifference(plan.date);
+
+  if (difference === null) {
+    return {
+      kind: "planned",
+      label: "Planned",
+    };
+  }
+
+  if (difference < 0) {
+    const overdueDays =
+      Math.abs(difference);
+
+    return {
+      kind: "overdue",
+      label:
+        overdueDays === 1
+          ? "Overdue by 1 day"
+          : `Overdue by ${overdueDays} days`,
+    };
+  }
+
+  if (difference === 0) {
+    return {
+      kind: "today",
+      label: "Today",
+    };
+  }
+
+  if (difference === 1) {
+    return {
+      kind: "tomorrow",
+      label: "Tomorrow",
+    };
+  }
+
+  if (difference <= 3) {
+    return {
+      kind: "soon",
+      label: `In ${difference} days`,
+    };
+  }
+
+  if (difference <= 7) {
+    return {
+      kind: "this-week",
+      label: "This week",
+    };
+  }
+
+  return {
+    kind: "planned",
+    label: "Planned",
+  };
+}
+
+function getDateAlertBadgeClass(
+  kind: ShootDateAlertKind,
+): string {
+  switch (kind) {
+    case "completed":
+      return "bg-green-950 text-green-300";
+
+    case "overdue":
+      return "bg-red-950 text-red-300";
+
+    case "today":
+      return "bg-amber-950 text-amber-300";
+
+    case "tomorrow":
+      return "bg-orange-950 text-orange-300";
+
+    case "soon":
+    case "this-week":
+      return "bg-violet-950 text-violet-300";
+
+    default:
+      return "bg-blue-950 text-blue-300";
+  }
+}
+
 export function UpcomingShoots({
   plans,
   isLoaded,
@@ -1004,49 +1149,79 @@ export function UpcomingShoots({
 
                             <div className="space-y-2">
                               {datePlans.map(
-                                (plan) => (
-                                  <button
-                                    key={plan.id}
-                                    type="button"
-                                    onClick={() =>
-                                      openShootFromCalendar(
-                                        plan.id,
-                                      )
-                                    }
-                                    title={`${plan.title} — ${plan.location}`}
-                                    className={`w-full rounded-lg border p-2 text-left transition hover:border-neutral-500 ${
-                                      plan.status ===
-                                      "completed"
-                                        ? "border-green-950 bg-green-950/20 opacity-70"
-                                        : "border-neutral-700 bg-neutral-900"
-                                    }`}
-                                  >
-                                    <div className="flex items-start gap-2">
-                                      <span className="shrink-0">
-                                        {getShootTypeIcon(
-                                          plan.shootType,
-                                        )}
-                                      </span>
+                                (plan) => {
+                                  const dateAlert =
+                                    getShootDateAlert(
+                                      plan,
+                                    );
 
-                                      <span className="min-w-0">
-                                        <span
-                                          className={`block truncate text-xs font-medium ${
-                                            plan.status ===
-                                            "completed"
-                                              ? "text-neutral-500 line-through"
-                                              : "text-neutral-200"
-                                          }`}
-                                        >
-                                          {plan.title}
+                                  const calendarClass =
+                                    dateAlert.kind ===
+                                    "completed"
+                                      ? "border-green-950 bg-green-950/20 opacity-70"
+                                      : dateAlert.kind ===
+                                          "overdue"
+                                        ? "border-red-900 bg-red-950/20"
+                                        : dateAlert.kind ===
+                                            "today"
+                                          ? "border-amber-800 bg-amber-950/20"
+                                          : "border-neutral-700 bg-neutral-900";
+
+                                  return (
+                                    <button
+                                      key={plan.id}
+                                      type="button"
+                                      onClick={() =>
+                                        openShootFromCalendar(
+                                          plan.id,
+                                        )
+                                      }
+                                      title={`${plan.title} — ${plan.location} — ${dateAlert.label}`}
+                                      className={`w-full rounded-lg border p-2 text-left transition hover:border-neutral-500 ${calendarClass}`}
+                                    >
+                                      <div className="flex items-start gap-2">
+                                        <span className="shrink-0">
+                                          {getShootTypeIcon(
+                                            plan.shootType,
+                                          )}
                                         </span>
 
-                                        <span className="mt-1 block truncate text-[11px] text-neutral-600">
-                                          {plan.location}
+                                        <span className="min-w-0">
+                                          <span
+                                            className={`block truncate text-xs font-medium ${
+                                              dateAlert.kind ===
+                                              "completed"
+                                                ? "text-neutral-500 line-through"
+                                                : "text-neutral-200"
+                                            }`}
+                                          >
+                                            {plan.title}
+                                          </span>
+
+                                          <span className="mt-1 block truncate text-[11px] text-neutral-600">
+                                            {plan.location}
+                                          </span>
+
+                                          <span
+                                            className={`mt-1 block truncate text-[10px] font-medium ${
+                                              dateAlert.kind ===
+                                              "overdue"
+                                                ? "text-red-400"
+                                                : dateAlert.kind ===
+                                                    "today"
+                                                  ? "text-amber-400"
+                                                  : "text-neutral-500"
+                                            }`}
+                                          >
+                                            {
+                                              dateAlert.label
+                                            }
+                                          </span>
                                         </span>
-                                      </span>
-                                    </div>
-                                  </button>
-                                ),
+                                      </div>
+                                    </button>
+                                  );
+                                },
                               )}
                             </div>
                           </>
@@ -1079,6 +1254,15 @@ export function UpcomingShoots({
             const isEditing =
               editingShootId === plan.id;
 
+            const dateAlert =
+              getShootDateAlert(plan);
+
+            const isOverdue =
+              dateAlert.kind === "overdue";
+
+            const isToday =
+              dateAlert.kind === "today";
+
             const completedShots =
               plan.completedShots ?? [];
 
@@ -1091,7 +1275,11 @@ export function UpcomingShoots({
                 className={`rounded-2xl border p-5 transition ${
                   isCompleted
                     ? "border-neutral-800 bg-neutral-950/40 opacity-75"
-                    : "border-neutral-700 bg-neutral-950/70"
+                    : isOverdue
+                      ? "border-red-900 bg-red-950/15"
+                      : isToday
+                        ? "border-amber-800 bg-amber-950/10"
+                        : "border-neutral-700 bg-neutral-950/70"
                 } ${
                   isExpanded
                     ? "md:col-span-2"
@@ -1126,15 +1314,11 @@ export function UpcomingShoots({
                   </div>
 
                   <span
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
-                      isCompleted
-                        ? "bg-green-950 text-green-300"
-                        : "bg-blue-950 text-blue-300"
-                    }`}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${getDateAlertBadgeClass(
+                      dateAlert.kind,
+                    )}`}
                   >
-                    {isCompleted
-                      ? "Completed"
-                      : "Planned"}
+                    {dateAlert.label}
                   </span>
                 </div>
 
