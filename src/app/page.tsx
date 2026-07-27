@@ -13,12 +13,20 @@ import {
   type RealtimeItem,
 } from "@openai/agents/realtime";
 
+import { ShootWeatherCard } from "@/components/ShootWeatherCard";
+import { UpcomingShoots } from "@/components/UpcomingShoots";
+
+import {
+  deleteShootPlan,
+  loadShootPlans,
+  updateShootPlan,
+  type ShootPlan,
+} from "@/lib/shootStorage";
+
 import {
   createShootWeatherTool,
   type ShootWeatherForecast,
 } from "@/lib/shootWeatherTool";
-
-import { ShootWeatherCard } from "@/components/ShootWeatherCard";
 
 type ConnectionStatus =
   | "disconnected"
@@ -94,8 +102,8 @@ function convertHistoryToMessages(
 }
 
 /**
- * Return the date using the user's local timezone
- * rather than UTC.
+ * Return the current date using the user's
+ * local timezone rather than UTC.
  */
 function getLocalDateString(): string {
   const now = new Date();
@@ -138,12 +146,18 @@ export default function Home() {
 
   const [errorMessage, setErrorMessage] =
     useState("");
-    const [latestForecast, setLatestForecast] =
-  useState<ShootWeatherForecast | null>(null);
+
+  const [latestForecast, setLatestForecast] =
+    useState<ShootWeatherForecast | null>(null);
+
+  const [shootPlans, setShootPlans] =
+    useState<ShootPlan[]>([]);
+
+  const [shootPlansLoaded, setShootPlansLoaded] =
+    useState(false);
 
   /**
-   * Scroll to the newest message whenever
-   * the conversation changes.
+   * Scroll to the newest conversation message.
    */
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({
@@ -152,13 +166,24 @@ export default function Home() {
   }, [messages]);
 
   /**
-   * Close the Realtime connection when
-   * the user leaves the page.
+   * Close the Realtime connection when the
+   * user leaves the page.
    */
   useEffect(() => {
     return () => {
       sessionRef.current?.close();
     };
+  }, []);
+
+  /**
+   * Load locally saved shoot plans when
+   * the page first opens.
+   */
+  useEffect(() => {
+    const savedPlans = loadShootPlans();
+
+    setShootPlans(savedPlans);
+    setShootPlansLoaded(true);
   }, []);
 
   async function startConversation() {
@@ -198,10 +223,11 @@ export default function Home() {
       }
 
       const currentDate = getLocalDateString();
+
       const shootWeatherTool =
-  createShootWeatherTool((forecast) => {
-    setLatestForecast(forecast);
-  });
+        createShootWeatherTool((forecast) => {
+          setLatestForecast(forecast);
+        });
 
       const agent = new RealtimeAgent({
         name: "Kay Assistant",
@@ -249,7 +275,7 @@ export default function Home() {
           If the user does not provide a location, ask for it.
 
           If the user does not provide a date, ask for it unless
-          the date can clearly be understood from their message.
+          the date can clearly be understood from the message.
 
           After receiving the forecast, provide:
           - The recommended shoot period
@@ -261,7 +287,7 @@ export default function Home() {
           - Visibility when useful
           - A short explanation of why the time is recommended
 
-          For a drone shoot, pay particular attention to wind
+          For drone shoots, pay particular attention to wind
           gusts and rain.
 
           Weather information is only a planning aid.
@@ -270,7 +296,7 @@ export default function Home() {
 
           Do not pretend that you checked live weather,
           drone restrictions, maps or calendar information
-          unless an appropriate tool actually provided it.
+          unless an appropriate tool provided it.
         `,
       });
 
@@ -408,6 +434,49 @@ export default function Home() {
     setMessages([]);
   }
 
+  function handleToggleShootStatus(
+    shootId: string,
+  ) {
+    const selectedPlan = shootPlans.find(
+      (plan) => plan.id === shootId,
+    );
+
+    if (!selectedPlan) {
+      return;
+    }
+
+    const updatedPlan: ShootPlan = {
+      ...selectedPlan,
+
+      status:
+        selectedPlan.status === "planned"
+          ? "completed"
+          : "planned",
+    };
+
+    const updatedPlans =
+      updateShootPlan(updatedPlan);
+
+    setShootPlans(updatedPlans);
+  }
+
+  function handleDeleteShoot(
+    shootId: string,
+  ) {
+    const shouldDelete = window.confirm(
+      "Delete this shoot plan?",
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    const updatedPlans =
+      deleteShootPlan(shootId);
+
+    setShootPlans(updatedPlans);
+  }
+
   function getStatusText() {
     if (status === "connecting") {
       return "Connecting to Kay Assistant...";
@@ -520,7 +589,7 @@ export default function Home() {
             </p>
 
             <p className="mt-2 text-sm text-neutral-400">
-              Kay can now retrieve weather and
+              Kay can retrieve live weather and
               golden-hour information for shoot planning.
             </p>
           </div>
@@ -529,7 +598,10 @@ export default function Home() {
             Your microphone is active only during
             a voice conversation.
           </p>
-          <ShootWeatherCard forecast={latestForecast} />
+
+          <ShootWeatherCard
+            forecast={latestForecast}
+          />
         </section>
 
         {/* Conversation transcript */}
@@ -661,6 +733,16 @@ export default function Home() {
             </p>
           </form>
         </section>
+
+        {/* Saved shoot plans */}
+        <UpcomingShoots
+          plans={shootPlans}
+          isLoaded={shootPlansLoaded}
+          onToggleStatus={
+            handleToggleShootStatus
+          }
+          onDelete={handleDeleteShoot}
+        />
       </div>
     </main>
   );
