@@ -66,6 +66,46 @@ type WeatherToolCallback = (
   forecast: ShootWeatherForecast,
 ) => void;
 
+/**
+ * Retrieve shoot weather from the application's
+ * weather API.
+ *
+ * This function can be used by both:
+ * - Kay Assistant's weather tool
+ * - The Refresh weather button
+ */
+export async function fetchShootWeather(
+  location: string,
+  date: string,
+): Promise<ShootWeatherForecast> {
+  const searchParams = new URLSearchParams({
+    location,
+    date,
+  });
+
+  const response = await fetch(
+    `/api/shoot-weather?${searchParams.toString()}`,
+    {
+      method: "GET",
+      cache: "no-store",
+    },
+  );
+
+  const data = (await response.json()) as
+    | ShootWeatherForecast
+    | ShootWeatherError;
+
+  if (!response.ok || "error" in data) {
+    throw new Error(
+      "error" in data
+        ? data.error
+        : "The shoot forecast could not be retrieved.",
+    );
+  }
+
+  return data;
+}
+
 export function createShootWeatherTool(
   onForecastReceived: WeatherToolCallback,
 ) {
@@ -110,34 +150,11 @@ export function createShootWeatherTool(
 
     async execute({ location, date }) {
       try {
-        const searchParams = new URLSearchParams({
-          location,
-          date,
-        });
-
-        const response = await fetch(
-          `/api/shoot-weather?${searchParams.toString()}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          },
-        );
-
-        const data = (await response.json()) as
-          | ShootWeatherForecast
-          | ShootWeatherError;
-
-        if (!response.ok || "error" in data) {
-          return JSON.stringify({
-            success: false,
-            error:
-              "error" in data
-                ? data.error
-                : "The shoot forecast could not be retrieved.",
-          });
-        }
-
-        const forecast = data as ShootWeatherForecast;
+        const forecast =
+          await fetchShootWeather(
+            location,
+            date,
+          );
 
         // Display the forecast inside the React weather card.
         onForecastReceived(forecast);
@@ -156,7 +173,9 @@ export function createShootWeatherTool(
         return JSON.stringify({
           success: false,
           error:
-            "The application could not connect to the shoot weather service.",
+            error instanceof Error
+              ? error.message
+              : "The application could not connect to the shoot weather service.",
         });
       }
     },

@@ -11,8 +11,14 @@ import type {
 type UpcomingShootsProps = {
   plans: ShootPlan[];
   isLoaded: boolean;
+  refreshingShootId: string | null;
+
   onToggleStatus: (shootId: string) => void;
   onDelete: (shootId: string) => void;
+
+  onRefreshWeather: (
+    shootId: string,
+  ) => void;
 
   onToggleShot: (
     shootId: string,
@@ -161,8 +167,10 @@ function formatGoldenHour(
 export function UpcomingShoots({
   plans,
   isLoaded,
+  refreshingShootId,
   onToggleStatus,
   onDelete,
+  onRefreshWeather,
   onToggleShot,
   onToggleEquipment,
 }: UpcomingShootsProps) {
@@ -248,6 +256,9 @@ export function UpcomingShoots({
 
             const isExpanded =
               expandedShootId === plan.id;
+
+            const isRefreshing =
+              refreshingShootId === plan.id;
 
             const completedShots =
               plan.completedShots ?? [];
@@ -580,7 +591,7 @@ export function UpcomingShoots({
                   </div>
                 )}
 
-                <div className="mt-5 grid grid-cols-3 gap-3 border-t border-neutral-800 pt-5">
+                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-neutral-800 pt-5 sm:grid-cols-4">
                   <button
                     type="button"
                     onClick={() =>
@@ -591,6 +602,20 @@ export function UpcomingShoots({
                     {isExpanded
                       ? "Hide details"
                       : "View details"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onRefreshWeather(plan.id)
+                    }
+                    disabled={isRefreshing}
+                    
+                    className="rounded-xl border border-blue-900 px-3 py-2.5 text-sm font-medium text-blue-300 transition hover:bg-blue-950/50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isRefreshing
+                      ? "Refreshing..."
+                      : "Refresh weather"}
                   </button>
 
                   <button

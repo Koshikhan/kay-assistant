@@ -28,6 +28,7 @@ import {
 
 import {
   createShootWeatherTool,
+  fetchShootWeather,
   type ShootWeatherForecast,
 } from "@/lib/shootWeatherTool";
 
@@ -175,15 +176,15 @@ function buildWeatherSummary(
     goldenHourEnd:
       selectedGoldenHour.end,
 
-      temperatureUnit:
-  forecast.dailySummary.units.temperature,
+    temperatureUnit:
+      forecast.dailySummary.units.temperature,
 
-rainProbabilityUnit:
-  forecast.dailySummary.units
-    .rainProbability,
+    rainProbabilityUnit:
+      forecast.dailySummary.units
+        .rainProbability,
 
-windSpeedUnit:
-  forecast.dailySummary.units.windSpeed,
+    windSpeedUnit:
+      forecast.dailySummary.units.windSpeed,
   };
 }
 
@@ -223,6 +224,11 @@ export default function Home() {
 
   const [shootPlansLoaded, setShootPlansLoaded] =
     useState(false);
+
+  const [
+    refreshingShootId,
+    setRefreshingShootId,
+  ] = useState<string | null>(null);
 
   /**
    * Scroll to the newest conversation message.
@@ -674,6 +680,62 @@ export default function Home() {
     setShootPlans(updatedPlans);
   }
 
+  async function handleRefreshShootWeather(
+    shootId: string,
+  ) {
+    const selectedPlan = shootPlans.find(
+      (plan) => plan.id === shootId,
+    );
+
+    if (!selectedPlan) {
+      return;
+    }
+
+    try {
+      setRefreshingShootId(shootId);
+      setErrorMessage("");
+
+      const forecast = await fetchShootWeather(
+        selectedPlan.location,
+        selectedPlan.date,
+      );
+
+      const weatherSummary =
+        buildWeatherSummary(
+          forecast,
+          selectedPlan.recommendedTime,
+        );
+
+      const updatedPlan: ShootPlan = {
+        ...selectedPlan,
+        weather: weatherSummary,
+      };
+
+      const updatedPlans =
+        updateShootPlan(updatedPlan);
+
+      setShootPlans(updatedPlans);
+
+      latestForecastRef.current =
+        forecast;
+
+      setLatestForecast(forecast);
+    } catch (error) {
+      console.error(
+        "Weather refresh failed:",
+        error,
+      );
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "The shoot weather could not be refreshed.",
+      );
+    } finally {
+      setRefreshingShootId(null);
+    }
+  }
+
   function handleDeleteShoot(
     shootId: string,
   ) {
@@ -950,19 +1012,25 @@ export default function Home() {
 
         {/* Saved shoot plans */}
         <UpcomingShoots
-          plans={shootPlans}
-          isLoaded={shootPlansLoaded}
-          onToggleStatus={
-            handleToggleShootStatus
-          }
-          onToggleShot={
-            handleToggleShot
-          }
-          onToggleEquipment={
-            handleToggleEquipment
-          }
-          onDelete={handleDeleteShoot}
-        />
+  plans={shootPlans}
+  isLoaded={shootPlansLoaded}
+  refreshingShootId={
+    refreshingShootId
+  }
+  onToggleStatus={
+    handleToggleShootStatus
+  }
+  onToggleShot={
+    handleToggleShot
+  }
+  onToggleEquipment={
+    handleToggleEquipment
+  }
+  onRefreshWeather={
+    handleRefreshShootWeather
+  }
+  onDelete={handleDeleteShoot}
+/>
       </div>
     </main>
   );
