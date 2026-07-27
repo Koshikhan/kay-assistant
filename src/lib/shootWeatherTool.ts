@@ -165,7 +165,7 @@ export function createShootWeatherTool(
           forecast,
         });
       } catch (error) {
-        console.error(
+        console.warn(
           "Shoot weather tool error:",
           error,
         );

@@ -680,6 +680,15 @@ export default function Home() {
     setShootPlans(updatedPlans);
   }
 
+  function handleUpdateShoot(
+    updatedPlan: ShootPlan,
+  ) {
+    const updatedPlans =
+      updateShootPlan(updatedPlan);
+
+    setShootPlans(updatedPlans);
+  }
+
   async function handleRefreshShootWeather(
     shootId: string,
   ) {
@@ -781,6 +790,8 @@ export default function Home() {
   }
 
   const isConnected = status === "connected";
+
+
 
   return (
     <main className="min-h-screen bg-neutral-950 px-5 py-10 text-white">
@@ -1025,6 +1036,9 @@ export default function Home() {
   }
   onToggleEquipment={
     handleToggleEquipment
+  }
+  onUpdateShoot={
+    handleUpdateShoot
   }
   onRefreshWeather={
     handleRefreshShootWeather

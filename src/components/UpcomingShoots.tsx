@@ -8,6 +8,16 @@ import type {
   ShootWeatherSummary,
 } from "@/lib/shootStorage";
 
+type EditShootForm = {
+  title: string;
+  location: string;
+  date: string;
+  recommendedTime: string;
+  shotListText: string;
+  equipmentText: string;
+  notes: string;
+};
+
 type UpcomingShootsProps = {
   plans: ShootPlan[];
   isLoaded: boolean;
@@ -18,6 +28,10 @@ type UpcomingShootsProps = {
 
   onRefreshWeather: (
     shootId: string,
+  ) => void;
+
+  onUpdateShoot: (
+    updatedPlan: ShootPlan,
   ) => void;
 
   onToggleShot: (
@@ -171,6 +185,7 @@ export function UpcomingShoots({
   onToggleStatus,
   onDelete,
   onRefreshWeather,
+  onUpdateShoot,
   onToggleShot,
   onToggleEquipment,
 }: UpcomingShootsProps) {
@@ -178,6 +193,22 @@ export function UpcomingShoots({
     expandedShootId,
     setExpandedShootId,
   ] = useState<string | null>(null);
+
+  const [
+    editingShootId,
+    setEditingShootId,
+  ] = useState<string | null>(null);
+
+  const [editForm, setEditForm] =
+    useState<EditShootForm>({
+      title: "",
+      location: "",
+      date: "",
+      recommendedTime: "",
+      shotListText: "",
+      equipmentText: "",
+      notes: "",
+    });
 
   const sortedPlans = [...plans].sort(
     (firstPlan, secondPlan) =>
@@ -194,6 +225,100 @@ export function UpcomingShoots({
         ? null
         : shootId,
     );
+  }
+
+  function beginEditing(
+    plan: ShootPlan,
+  ) {
+    setExpandedShootId(plan.id);
+    setEditingShootId(plan.id);
+
+    setEditForm({
+      title: plan.title,
+      location: plan.location,
+      date: plan.date,
+      recommendedTime:
+        plan.recommendedTime,
+      shotListText:
+        plan.shotList.join("\n"),
+      equipmentText:
+        plan.equipment.join("\n"),
+      notes: plan.notes,
+    });
+  }
+
+  function cancelEditing() {
+    setEditingShootId(null);
+  }
+
+  function updateEditField(
+    field: keyof EditShootForm,
+    value: string,
+  ) {
+    setEditForm((currentForm) => ({
+      ...currentForm,
+      [field]: value,
+    }));
+  }
+
+  function saveEditedShoot(
+    plan: ShootPlan,
+  ) {
+    const title = editForm.title.trim();
+    const location =
+      editForm.location.trim();
+    const date = editForm.date;
+
+    if (!title || !location || !date) {
+      return;
+    }
+
+    const shotList =
+      editForm.shotListText
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+    const equipment =
+      editForm.equipmentText
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+    const locationChanged =
+      location.toLowerCase() !==
+      plan.location.trim().toLowerCase();
+
+    const dateChanged =
+      date !== plan.date;
+
+    onUpdateShoot({
+      ...plan,
+      title,
+      location,
+      date,
+      recommendedTime:
+        editForm.recommendedTime.trim(),
+      shotList,
+      equipment,
+      completedShots: (
+        plan.completedShots ?? []
+      ).filter((item) =>
+        shotList.includes(item),
+      ),
+      packedEquipment: (
+        plan.packedEquipment ?? []
+      ).filter((item) =>
+        equipment.includes(item),
+      ),
+      notes: editForm.notes.trim(),
+      weather:
+        locationChanged || dateChanged
+          ? null
+          : plan.weather,
+    });
+
+    setEditingShootId(null);
   }
 
   return (
@@ -259,6 +384,9 @@ export function UpcomingShoots({
 
             const isRefreshing =
               refreshingShootId === plan.id;
+
+            const isEditing =
+              editingShootId === plan.id;
 
             const completedShots =
               plan.completedShots ?? [];
@@ -378,6 +506,164 @@ export function UpcomingShoots({
 
                 {isExpanded && (
                   <div className="mt-6 grid gap-6 border-t border-neutral-800 pt-6 md:grid-cols-2">
+                    {isEditing && (
+                      <div className="rounded-xl border border-amber-900/60 bg-neutral-900 p-5 md:col-span-2">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-400">
+                            Edit shoot
+                          </p>
+
+                          <h4 className="mt-1 font-semibold text-white">
+                            Update plan details
+                          </h4>
+
+                          <p className="mt-1 text-xs leading-5 text-neutral-500">
+                            Put each shot-list and equipment item on a separate line.
+                            Changing the date or location clears the saved weather,
+                            so refresh it again afterwards.
+                          </p>
+                        </div>
+
+                        <div className="mt-5 grid gap-4 md:grid-cols-2">
+                          <label className="text-sm text-neutral-300">
+                            Title
+                            <input
+                              type="text"
+                              value={editForm.title}
+                              onChange={(event) =>
+                                updateEditField(
+                                  "title",
+                                  event.target.value,
+                                )
+                              }
+                              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                            />
+                          </label>
+
+                          <label className="text-sm text-neutral-300">
+                            Location
+                            <input
+                              type="text"
+                              value={editForm.location}
+                              onChange={(event) =>
+                                updateEditField(
+                                  "location",
+                                  event.target.value,
+                                )
+                              }
+                              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                            />
+                          </label>
+
+                          <label className="text-sm text-neutral-300">
+                            Date
+                            <input
+                              type="date"
+                              value={editForm.date}
+                              onChange={(event) =>
+                                updateEditField(
+                                  "date",
+                                  event.target.value,
+                                )
+                              }
+                              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                            />
+                          </label>
+
+                          <label className="text-sm text-neutral-300">
+                            Recommended time
+                            <input
+                              type="text"
+                              value={
+                                editForm.recommendedTime
+                              }
+                              onChange={(event) =>
+                                updateEditField(
+                                  "recommendedTime",
+                                  event.target.value,
+                                )
+                              }
+                              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                            />
+                          </label>
+
+                          <label className="text-sm text-neutral-300">
+                            Shot list
+                            <textarea
+                              value={
+                                editForm.shotListText
+                              }
+                              onChange={(event) =>
+                                updateEditField(
+                                  "shotListText",
+                                  event.target.value,
+                                )
+                              }
+                              rows={7}
+                              className="mt-2 w-full resize-y rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                            />
+                          </label>
+
+                          <label className="text-sm text-neutral-300">
+                            Equipment
+                            <textarea
+                              value={
+                                editForm.equipmentText
+                              }
+                              onChange={(event) =>
+                                updateEditField(
+                                  "equipmentText",
+                                  event.target.value,
+                                )
+                              }
+                              rows={7}
+                              className="mt-2 w-full resize-y rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                            />
+                          </label>
+
+                          <label className="text-sm text-neutral-300 md:col-span-2">
+                            Preparation notes
+                            <textarea
+                              value={editForm.notes}
+                              onChange={(event) =>
+                                updateEditField(
+                                  "notes",
+                                  event.target.value,
+                                )
+                              }
+                              rows={4}
+                              className="mt-2 w-full resize-y rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none focus:border-neutral-500"
+                            />
+                          </label>
+                        </div>
+
+                        <div className="mt-5 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              saveEditedShoot(plan)
+                            }
+                            disabled={
+                              !editForm.title.trim() ||
+                              !editForm.location.trim() ||
+                              !editForm.date
+                            }
+                            className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Save changes
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={cancelEditing}
+                            className="rounded-xl border border-neutral-700 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {plan.weather && (
                       <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-5 md:col-span-2">
                         <div>
@@ -591,7 +877,7 @@ export function UpcomingShoots({
                   </div>
                 )}
 
-                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-neutral-800 pt-5 sm:grid-cols-4">
+                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-neutral-800 pt-5 sm:grid-cols-5">
                   <button
                     type="button"
                     onClick={() =>
@@ -607,10 +893,23 @@ export function UpcomingShoots({
                   <button
                     type="button"
                     onClick={() =>
+                      isEditing
+                        ? cancelEditing()
+                        : beginEditing(plan)
+                    }
+                    className="rounded-xl border border-amber-900 px-3 py-2.5 text-sm font-medium text-amber-300 transition hover:bg-amber-950/40"
+                  >
+                    {isEditing
+                      ? "Cancel edit"
+                      : "Edit"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
                       onRefreshWeather(plan.id)
                     }
                     disabled={isRefreshing}
-                    
                     className="rounded-xl border border-blue-900 px-3 py-2.5 text-sm font-medium text-blue-300 transition hover:bg-blue-950/50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isRefreshing
