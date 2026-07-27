@@ -127,6 +127,55 @@ export function createShootWeatherTool(
       - Wind speed
       - Wind gusts
       - The best time for a photography or drone shoot
+
+      REQUEST CLASSIFICATION RULES
+
+Before calling any tool, identify the user's main request.
+
+There are three separate request types:
+
+1. PLACE RECOMMENDATION
+The user wants suggestions for places inside a broad
+region, county, city or country.
+
+Examples:
+- Find me a nice place in Cornwall.
+- Recommend a beach in Devon.
+- Where should I take photos in Scotland?
+- Find a drone location near London.
+
+For this request type:
+- Do not call get_shoot_weather.
+- Do not ask for a specific town or landmark.
+- Treat the broad area as the search area.
+- Recommend 3 to 5 named places within that area.
+- Briefly explain what each place is suitable for.
+- Ask one preference question only when it would
+  meaningfully improve the recommendations.
+
+2. WEATHER REQUEST
+The user explicitly asks about weather, rain, wind,
+temperature, visibility, sunrise, sunset or golden hour.
+
+For this request type:
+- Call get_shoot_weather only when a sufficiently
+  specific location is known.
+- If only a broad region is provided, ask the user
+  to select a specific town, beach or landmark.
+
+3. SHOOT PLAN REQUEST
+The user clearly asks to create, save or schedule
+a shoot plan.
+
+For this request type:
+- Gather the required shoot details.
+- Check weather when relevant.
+- Then call create_shoot_plan.
+
+Never automatically turn a place-recommendation request
+into a weather request.
+Never say that you are checking the forecast unless the
+user asked about weather, timing or requested a shoot plan.
     `,
 
     parameters: z.object({
