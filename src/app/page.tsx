@@ -195,7 +195,7 @@ export default function Home() {
   const latestForecastRef =
     useRef<ShootWeatherForecast | null>(null);
 
-  const transcriptEndRef =
+  const transcriptContainerRef =
     useRef<HTMLDivElement | null>(null);
 
   const [status, setStatus] =
@@ -234,7 +234,15 @@ export default function Home() {
    * Scroll to the newest conversation message.
    */
   useEffect(() => {
-    transcriptEndRef.current?.scrollIntoView({
+    const transcriptContainer =
+      transcriptContainerRef.current;
+
+    if (!transcriptContainer) {
+      return;
+    }
+
+    transcriptContainer.scrollTo({
+      top: transcriptContainer.scrollHeight,
       behavior: "smooth",
     });
   }, [messages]);
@@ -730,7 +738,7 @@ export default function Home() {
 
       setLatestForecast(forecast);
     } catch (error) {
-      console.error(
+      console.warn(
         "Weather refresh failed:",
         error,
       );
@@ -790,8 +798,6 @@ export default function Home() {
   }
 
   const isConnected = status === "connected";
-
-
 
   return (
     <main className="min-h-screen bg-neutral-950 px-5 py-10 text-white">
@@ -892,7 +898,7 @@ export default function Home() {
         </section>
 
         {/* Conversation transcript */}
-        <section className="flex min-h-[600px] flex-col rounded-3xl border border-neutral-800 bg-neutral-900 shadow-2xl">
+        <section className="flex h-[600px] flex-col rounded-3xl border border-neutral-800 bg-neutral-900 shadow-2xl">
           <div className="flex items-center justify-between border-b border-neutral-800 px-6 py-5">
             <div>
               <h2 className="text-xl font-semibold">
@@ -917,7 +923,10 @@ export default function Home() {
               )}
           </div>
 
-          <div className="flex-1 space-y-5 overflow-y-auto p-6">
+          <div
+            ref={transcriptContainerRef}
+            className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6"
+          >
             {messages.length === 0 ? (
               <div className="flex h-full min-h-[440px] items-center justify-center">
                 <div className="max-w-sm text-center">
@@ -978,7 +987,6 @@ export default function Home() {
               ))
             )}
 
-            <div ref={transcriptEndRef} />
           </div>
 
           {/* Typed-message form */}
