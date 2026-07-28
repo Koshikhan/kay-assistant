@@ -1395,16 +1395,16 @@ user asked about weather, timing or requested a shoot plan.
   const isConnected = status === "connected";
 
   return (
-    <main className="min-h-screen bg-neutral-950 px-5 py-10 text-white">
-      <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-[360px_1fr]">
+    <main className="min-h-screen overflow-x-hidden bg-neutral-950 px-3 py-4 text-white sm:px-5 sm:py-8 lg:py-10">
+      <div className="mx-auto grid w-full max-w-6xl gap-4 sm:gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
         {/* Assistant controls */}
-        <section className="h-fit rounded-3xl border border-neutral-800 bg-neutral-900 p-7 shadow-2xl">
-          <div className="mb-8">
+        <section className="h-fit rounded-3xl border border-neutral-800 bg-neutral-900 p-4 shadow-2xl sm:p-6 lg:p-7">
+          <div className="mb-6 sm:mb-8">
             <p className="mb-3 text-sm font-medium uppercase tracking-widest text-neutral-400">
               Voice-first AI assistant
             </p>
 
-            <h1 className="text-4xl font-bold tracking-tight">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Kay Assistant
             </h1>
 
@@ -1414,7 +1414,7 @@ user asked about weather, timing or requested a shoot plan.
             </p>
           </div>
 
-          <div className="rounded-2xl bg-neutral-800 p-5">
+          <div className="rounded-2xl bg-neutral-800 p-4 sm:p-5">
             <div className="mb-5 flex items-center gap-3">
               <span
                 className={`h-3 w-3 rounded-full ${
@@ -1443,7 +1443,9 @@ user asked about weather, timing or requested a shoot plan.
               <button
                 type="button"
                 onClick={startConversation}
-                disabled={status === "connecting"}
+                disabled={
+                  status === "connecting"
+                }
                 className="w-full rounded-xl bg-white px-5 py-3 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {status === "connecting"
@@ -1457,7 +1459,9 @@ user asked about weather, timing or requested a shoot plan.
                   onClick={toggleMute}
                   className="w-full rounded-xl border border-neutral-600 px-5 py-3 font-semibold transition hover:bg-neutral-700"
                 >
-                  {isMuted ? "Unmute" : "Mute"}
+                  {isMuted
+                    ? "Unmute"
+                    : "Mute"}
                 </button>
 
                 <button
@@ -1479,7 +1483,8 @@ user asked about weather, timing or requested a shoot plan.
             <p className="mt-2 text-sm text-neutral-400">
               Kay can retrieve live shoot weather,
               calculate golden hour, open locations in
-              Google or Apple Maps and save shoot plans.
+              Google or Apple Maps and save shoot
+              plans.
             </p>
           </div>
 
@@ -1489,19 +1494,21 @@ user asked about weather, timing or requested a shoot plan.
           </p>
 
           <ShootWeatherCard
-  forecast={latestForecast}
-/>
+            forecast={latestForecast}
+          />
 
-<LocationDetailsCard
-  locations={latestLocationDetails}
-/>
+          <LocationDetailsCard
+            locations={
+              latestLocationDetails
+            }
+          />
 
-<LogoutButton />
+          <LogoutButton />
+        </section>
 
-</section>
         {/* Conversation transcript */}
-        <section className="flex h-[600px] flex-col rounded-3xl border border-neutral-800 bg-neutral-900 shadow-2xl">
-          <div className="flex items-center justify-between border-b border-neutral-800 px-6 py-5">
+        <section className="flex h-[70svh] min-h-[520px] min-w-0 flex-col rounded-3xl border border-neutral-800 bg-neutral-900 shadow-2xl sm:h-[650px] lg:h-[700px]">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-800 px-4 py-4 sm:px-6 sm:py-5">
             <div>
               <h2 className="text-xl font-semibold">
                 Live transcript
@@ -1527,10 +1534,10 @@ user asked about weather, timing or requested a shoot plan.
 
           <div
             ref={transcriptContainerRef}
-            className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6"
+            className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:space-y-5 sm:p-6"
           >
             {messages.length === 0 ? (
-              <div className="flex h-full min-h-[440px] items-center justify-center">
+              <div className="flex h-full min-h-[320px] items-center justify-center sm:min-h-[440px]">
                 <div className="max-w-sm text-center">
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-neutral-800 text-2xl">
                     🎙️
@@ -1541,8 +1548,9 @@ user asked about weather, timing or requested a shoot plan.
                   </p>
 
                   <p className="mt-2 text-sm leading-6 text-neutral-500">
-                    Ask about shoot weather or tell Kay
-                    to create and save a new shoot plan.
+                    Ask about shoot weather or tell
+                    Kay to create and save a new shoot
+                    plan.
                   </p>
                 </div>
               </div>
@@ -1557,7 +1565,7 @@ user asked about weather, timing or requested a shoot plan.
                   }`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-5 py-4 ${
+                    className={`max-w-[92%] rounded-2xl px-4 py-3 sm:max-w-[85%] sm:px-5 sm:py-4 ${
                       message.role === "user"
                         ? "bg-white text-black"
                         : "bg-neutral-800 text-white"
@@ -1575,7 +1583,7 @@ user asked about weather, timing or requested a shoot plan.
                         : "Kay"}
                     </p>
 
-                    <p className="whitespace-pre-wrap leading-7">
+                    <p className="whitespace-pre-wrap break-words text-sm leading-6 sm:text-base sm:leading-7">
                       {message.text}
                     </p>
 
@@ -1588,20 +1596,21 @@ user asked about weather, timing or requested a shoot plan.
                 </div>
               ))
             )}
-
           </div>
 
           {/* Typed-message form */}
           <form
             onSubmit={sendTypedMessage}
-            className="border-t border-neutral-800 p-5"
+            className="border-t border-neutral-800 p-3 sm:p-5"
           >
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <input
                 type="text"
                 value={textInput}
                 onChange={(event) =>
-                  setTextInput(event.target.value)
+                  setTextInput(
+                    event.target.value,
+                  )
                 }
                 disabled={!isConnected}
                 placeholder={
@@ -1618,13 +1627,13 @@ user asked about weather, timing or requested a shoot plan.
                   !isConnected ||
                   !textInput.trim()
                 }
-                className="rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
+                className="w-full rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
               >
                 Send
               </button>
             </div>
 
-            <p className="mt-3 text-xs text-neutral-500">
+            <p className="mt-3 text-xs leading-5 text-neutral-500">
               Try: “Create and save a drone shoot
               plan for Brighton tomorrow evening.”
             </p>
@@ -1639,36 +1648,37 @@ user asked about weather, timing or requested a shoot plan.
 
         {/* Saved shoot plans */}
         <UpcomingShoots
-  plans={shootPlans}
-  isLoaded={shootPlansLoaded}
-  refreshingShootId={
-    refreshingShootId
-  }
-  onToggleStatus={
-    handleToggleShootStatus
-  }
-  onToggleShot={
-    handleToggleShot
-  }
-  onToggleEquipment={
-    handleToggleEquipment
-  }
-  onUpdateShoot={
-    handleUpdateShoot
-  }
-  onCreateShoot={
-    handleCreateManualShoot
-  }
-  onCheckManualWeather={
-    handleCheckManualWeather
-  }
-  onRefreshWeather={
-    handleRefreshShootWeather
-  }
-  onDelete={handleDeleteShoot}
-/>
+          plans={shootPlans}
+          isLoaded={shootPlansLoaded}
+          refreshingShootId={
+            refreshingShootId
+          }
+          onToggleStatus={
+            handleToggleShootStatus
+          }
+          onToggleShot={
+            handleToggleShot
+          }
+          onToggleEquipment={
+            handleToggleEquipment
+          }
+          onUpdateShoot={
+            handleUpdateShoot
+          }
+          onCreateShoot={
+            handleCreateManualShoot
+          }
+          onCheckManualWeather={
+            handleCheckManualWeather
+          }
+          onRefreshWeather={
+            handleRefreshShootWeather
+          }
+          onDelete={
+            handleDeleteShoot
+          }
+        />
       </div>
     </main>
-    );
-  }
-  
+  );
+}
