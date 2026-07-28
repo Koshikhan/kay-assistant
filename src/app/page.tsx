@@ -2,6 +2,7 @@
 import { LogoutButton } from "@/components/LogoutButton";
 import { LocationDetailsCard } from "@/components/LocationDetailsCard";
 import { EquipmentLibrary } from "@/components/EquipmentLibrary";
+import { UserProfilePreferences } from "@/components/UserProfilePreferences";
 import {
   type FormEvent,
   useEffect,
@@ -21,6 +22,120 @@ import { UpcomingShoots } from "@/components/UpcomingShoots";
 import { createShootPlanTool } from "@/lib/shootPlanTool";
 
 import { createEquipmentLibraryTool } from "@/lib/equipmentLibraryTool";
+import { tool } from "@openai/agents";
+import { z } from "zod";
+
+import {
+  loadUserProfileFromDatabase,
+} from "@/lib/userProfileDatabase";
+
+export function createUserProfileTool() {
+  return tool({
+    name: "get_user_profile",
+
+    description: `
+      Read the currently logged-in user's saved profile
+      and creative preferences.
+
+      Use this tool before:
+      - Creating or saving a shoot plan
+      - Giving personalised photography, video or drone advice
+      - Recommending nearby locations
+      - Choosing a creative style
+      - Choosing a preferred shoot time
+      - Answering questions about saved preferences
+
+      The user's current request always overrides
+      the saved preferences.
+
+      This tool is read-only.
+      It cannot edit the profile.
+    `,
+
+    parameters: z.object({}),
+
+    async execute() {
+      try {
+        const profile =
+          await loadUserProfileFromDatabase();
+
+        if (!profile) {
+          return JSON.stringify({
+            success: true,
+            hasProfile: false,
+            message:
+              "The user has not saved a profile yet.",
+          });
+        }
+
+        return JSON.stringify({
+          success: true,
+          hasProfile: true,
+
+          profile: {
+            displayName:
+              profile.displayName,
+
+            experienceLevel:
+              profile.experienceLevel,
+
+            defaultShootType:
+              profile.defaultShootType,
+
+            preferredStyles:
+              profile.preferredStyles,
+
+            homeLocation:
+              profile.homeLocation,
+
+            preferredShootTime:
+              profile.preferredShootTime,
+
+            planningNotes:
+              profile.planningNotes,
+          },
+
+          guidance: {
+            explicitRequestWins:
+              "The current request overrides saved defaults.",
+
+            experienceLevel:
+              "Adjust technical explanations to the user's level.",
+
+            defaultShootType:
+              "Use only when the user has not chosen a shoot type.",
+
+            preferredStyles:
+              "Use these styles for concepts and shot lists.",
+
+            homeLocation:
+              "Use this for nearby recommendations when no location is given.",
+
+            preferredShootTime:
+              "Prefer this time when practical.",
+
+            planningNotes:
+              "Follow these personal instructions when relevant.",
+          },
+        });
+      } catch (error) {
+        console.error(
+          "User profile tool error:",
+          error,
+        );
+
+        return JSON.stringify({
+          success: false,
+
+          error:
+            error instanceof Error
+              ? error.message
+              : "The user profile could not be loaded.",
+        });
+      }
+    },
+  });
+}
 
 import {
   createLocationDetailsTool,
@@ -374,6 +489,9 @@ export default function Home() {
       const equipmentLibraryTool =
         createEquipmentLibraryTool();
 
+        const userProfileTool =
+          createUserProfileTool();
+
       const locationDetailsTool =
         createLocationDetailsTool(
           (locations) => {
@@ -413,6 +531,7 @@ export default function Home() {
         name: "Kay Assistant",
 
         tools: [
+          userProfileTool,
           locationDetailsTool,
           shootWeatherTool,
           equipmentLibraryTool,
@@ -529,6 +648,52 @@ Do not claim that you checked access, opening times
 or drone restrictions unless an appropriate tool
 provided that information.
 
+PROFILE AND PREFERENCES RULES
+
+Call get_user_profile before:
+- Creating or saving a shoot plan
+- Giving personalised creative advice
+- Giving personalised equipment advice
+- Recommending somewhere nearby or local
+- Answering what the user's saved preferences are
+
+Saved preferences are defaults, not commands.
+
+Follow this order:
+1. The user's current request
+2. Safety, weather and practical limits
+3. Saved profile preferences
+
+Apply the profile like this:
+
+- Adjust technical language to the experience level.
+
+- Use the default shoot type only when the user
+  has not specified one.
+
+- If the default type is mixed and the type matters,
+  ask one clarification question.
+
+- Use preferred styles when creating concepts,
+  compositions and shot lists.
+
+- Use home location only when the user asks for
+  nearby or local recommendations without naming
+  another location.
+
+- Prefer the saved shoot time when practical.
+
+- Follow the personal planning instructions when
+  they are relevant.
+
+- Use the display name naturally and sparingly.
+
+Do not claim a preference exists unless
+get_user_profile returned it.
+
+If no profile exists, continue normally and ask only
+for information required for the current request.
+
           LOCATION DETAILS RULES
 
           When you recommend one or more specific named
@@ -576,6 +741,31 @@ provided that information.
           Convert relative dates such as today, tomorrow,
           this Saturday or next Sunday into YYYY-MM-DD format
           before calling the tool.
+
+          Before calling get_shoot_weather, use a location that
+a weather geocoder can recognise.
+
+Prefer:
+- Town or city
+- County or region
+- Country
+- Postcode
+- A complete resolved address
+
+When the user gives only a beach, pier, harbour,
+landmark or attraction name, call get_location_details
+first.
+
+Use the resolved town, address or postcode returned by
+get_location_details when calling get_shoot_weather.
+
+For example:
+- Southend Beach → Southend-on-Sea, Essex, UK
+- Brighton Palace Pier → Brighton, UK
+- Seven Sisters Cliffs → East Sussex, UK
+
+Do not repeatedly call the weather tool using the same
+location after it has already returned a location error.
 
           REQUEST CLASSIFICATION RULES
 
@@ -1440,6 +1630,9 @@ user asked about weather, timing or requested a shoot plan.
             </p>
           </form>
         </section>
+
+        {/* User profile and preferences */}
+        <UserProfilePreferences />
 
         {/* User equipment library */}
         <EquipmentLibrary />
