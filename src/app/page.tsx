@@ -1,5 +1,6 @@
 "use client";
 import { LogoutButton } from "@/components/LogoutButton";
+import { EquipmentLibrary } from "@/components/EquipmentLibrary";
 import {
   type FormEvent,
   useEffect,
@@ -1342,6 +1343,9 @@ user asked about weather, timing or requested a shoot plan.
             </p>
           </form>
         </section>
+
+        {/* User equipment library */}
+        <EquipmentLibrary />
 
         {/* Saved shoot plans */}
         <UpcomingShoots
