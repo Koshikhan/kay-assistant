@@ -1,6 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import {
+  loadEquipmentItemsFromDatabase,
+  type EquipmentItem,
+} from "@/lib/equipmentDatabase";
 
 import {
   createShootId,
@@ -51,6 +56,59 @@ type ShootSortOrder =
 type ShootViewMode =
   | "list"
   | "calendar";
+
+function formatLibraryEquipment(
+  item: EquipmentItem,
+): string {
+  const brandAndModel = [
+    item.brand,
+    item.model,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  const label =
+    brandAndModel &&
+    brandAndModel.toLowerCase() !==
+      item.name.trim().toLowerCase()
+      ? `${item.name} — ${brandAndModel}`
+      : item.name;
+
+  return item.quantity > 1
+    ? `${label} ×${item.quantity}`
+    : label;
+}
+
+function mergeEquipmentLists(
+  typedEquipment: string[],
+  selectedEquipment: string[],
+): string[] {
+  const uniqueEquipment = new Map<
+    string,
+    string
+  >();
+
+  for (const item of [
+    ...selectedEquipment,
+    ...typedEquipment,
+  ]) {
+    const trimmedItem = item.trim();
+
+    if (!trimmedItem) {
+      continue;
+    }
+
+    uniqueEquipment.set(
+      trimmedItem.toLowerCase(),
+      trimmedItem,
+    );
+  }
+
+  return Array.from(
+    uniqueEquipment.values(),
+  );
+}
 
 type UpcomingShootsProps = {
   plans: ShootPlan[];
@@ -483,6 +541,26 @@ export function UpcomingShoots({
   const [manualFormMessage, setManualFormMessage] =
     useState("");
 
+  const [
+    equipmentLibraryItems,
+    setEquipmentLibraryItems,
+  ] = useState<EquipmentItem[]>([]);
+
+  const [
+    equipmentLibraryLoaded,
+    setEquipmentLibraryLoaded,
+  ] = useState(false);
+
+  const [
+    equipmentLibraryError,
+    setEquipmentLibraryError,
+  ] = useState("");
+
+  const [
+    selectedEquipmentIds,
+    setSelectedEquipmentIds,
+  ] = useState<string[]>([]);
+
   const [manualForm, setManualForm] =
     useState<ManualShootForm>({
       title: "",
@@ -533,6 +611,51 @@ export function UpcomingShoots({
       equipmentText: "",
       notes: "",
     });
+
+  useEffect(() => {
+    if (!isAddingManualShoot) {
+      return;
+    }
+
+    let isActive = true;
+
+    async function loadEquipmentLibrary() {
+      try {
+        setEquipmentLibraryLoaded(false);
+        setEquipmentLibraryError("");
+
+        const items =
+          await loadEquipmentItemsFromDatabase();
+
+        if (isActive) {
+          setEquipmentLibraryItems(items);
+        }
+      } catch (error) {
+        console.warn(
+          "Manual equipment library loading failed:",
+          error,
+        );
+
+        if (isActive) {
+          setEquipmentLibraryError(
+            error instanceof Error
+              ? error.message
+              : "Your equipment library could not be loaded.",
+          );
+        }
+      } finally {
+        if (isActive) {
+          setEquipmentLibraryLoaded(true);
+        }
+      }
+    }
+
+    void loadEquipmentLibrary();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isAddingManualShoot]);
 
   const normalisedSearch =
     searchQuery.trim().toLowerCase();
@@ -755,7 +878,66 @@ export function UpcomingShoots({
 
     setManualWeatherForecast(null);
     setManualFormMessage("");
+    setSelectedEquipmentIds([]);
+    setEquipmentLibraryError("");
     setIsAddingManualShoot(false);
+  }
+
+  function toggleLibraryEquipment(
+    equipmentId: string,
+  ) {
+    setSelectedEquipmentIds(
+      (currentIds) =>
+        currentIds.includes(equipmentId)
+          ? currentIds.filter(
+              (id) => id !== equipmentId,
+            )
+          : [
+              ...currentIds,
+              equipmentId,
+            ],
+    );
+  }
+
+  async function refreshManualEquipmentLibrary() {
+    try {
+      setEquipmentLibraryLoaded(false);
+      setEquipmentLibraryError("");
+
+      const items =
+        await loadEquipmentItemsFromDatabase();
+
+      setEquipmentLibraryItems(items);
+
+      const availableIds = new Set(
+        items
+          .filter(
+            (item) =>
+              item.status === "available",
+          )
+          .map((item) => item.id),
+      );
+
+      setSelectedEquipmentIds(
+        (currentIds) =>
+          currentIds.filter((id) =>
+            availableIds.has(id),
+          ),
+      );
+    } catch (error) {
+      console.warn(
+        "Manual equipment library refresh failed:",
+        error,
+      );
+
+      setEquipmentLibraryError(
+        error instanceof Error
+          ? error.message
+          : "Your equipment library could not be refreshed.",
+      );
+    } finally {
+      setEquipmentLibraryLoaded(true);
+    }
   }
 
   async function checkManualShootWeather() {
@@ -812,10 +994,28 @@ export function UpcomingShoots({
       .map((item) => item.trim())
       .filter(Boolean);
 
-    const equipment = manualForm.equipmentText
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean);
+    const typedEquipment =
+      manualForm.equipmentText
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+    const selectedEquipment =
+      equipmentLibraryItems
+        .filter(
+          (item) =>
+            selectedEquipmentIds.includes(
+              item.id,
+            ) &&
+            item.status === "available",
+        )
+        .map(formatLibraryEquipment);
+
+    const equipment =
+      mergeEquipmentLists(
+        typedEquipment,
+        selectedEquipment,
+      );
 
     const now = new Date().toISOString();
 
@@ -1180,20 +1380,136 @@ export function UpcomingShoots({
                 />
               </label>
 
-              <label className="text-sm text-neutral-300">
-                Equipment
-                <textarea
-                  value={manualForm.equipmentText}
-                  onChange={(event) =>
-                    updateManualFormField(
-                      "equipmentText",
-                      event.target.value,
-                    )
-                  }
-                  rows={6}
-                  className="mt-2 w-full resize-y rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none focus:border-neutral-500"
-                />
-              </label>
+              <div className="text-sm text-neutral-300">
+                <div className="flex items-center justify-between gap-3">
+                  <span>Equipment</span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void refreshManualEquipmentLibrary()
+                    }
+                    disabled={
+                      !equipmentLibraryLoaded
+                    }
+                    className="text-xs font-medium text-blue-300 transition hover:text-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Refresh library
+                  </button>
+                </div>
+
+                <div className="mt-2 rounded-xl border border-neutral-700 bg-neutral-900 p-3">
+                  {!equipmentLibraryLoaded ? (
+                    <p className="py-4 text-center text-xs text-neutral-500">
+                      Loading your equipment library...
+                    </p>
+                  ) : equipmentLibraryError ? (
+                    <p className="py-3 text-xs text-red-300">
+                      {equipmentLibraryError}
+                    </p>
+                  ) : equipmentLibraryItems.length ===
+                    0 ? (
+                    <p className="py-4 text-center text-xs leading-5 text-neutral-500">
+                      Your equipment library is empty.
+                      Add equipment above, then refresh
+                      this list.
+                    </p>
+                  ) : (
+                    <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
+                      {equipmentLibraryItems.map(
+                        (item) => {
+                          const isAvailable =
+                            item.status ===
+                            "available";
+
+                          const isSelected =
+                            selectedEquipmentIds.includes(
+                              item.id,
+                            );
+
+                          return (
+                            <label
+                              key={item.id}
+                              className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 transition ${
+                                isAvailable
+                                  ? "cursor-pointer border-neutral-800 hover:bg-neutral-800/70"
+                                  : "cursor-not-allowed border-neutral-800/70 opacity-50"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={
+                                  isSelected
+                                }
+                                disabled={
+                                  !isAvailable
+                                }
+                                onChange={() =>
+                                  toggleLibraryEquipment(
+                                    item.id,
+                                  )
+                                }
+                                className="mt-1 h-4 w-4 accent-white"
+                              />
+
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm text-neutral-200">
+                                  {formatLibraryEquipment(
+                                    item,
+                                  )}
+                                </span>
+
+                                <span className="mt-0.5 block text-xs capitalize text-neutral-500">
+                                  {item.category}
+                                  {" · "}
+                                  {item.status}
+                                </span>
+                              </span>
+                            </label>
+                          );
+                        },
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <p className="mt-2 text-xs text-neutral-500">
+                  {
+                    selectedEquipmentIds
+                      .length
+                  }{" "}
+                  library item
+                  {selectedEquipmentIds.length ===
+                  1
+                    ? ""
+                    : "s"}{" "}
+                  selected
+                </p>
+
+                <label className="mt-3 block">
+                  <span className="text-xs text-neutral-500">
+                    Additional or rented equipment
+                    — one item per line
+                  </span>
+
+                  <textarea
+                    value={
+                      manualForm.equipmentText
+                    }
+                    onChange={(event) =>
+                      updateManualFormField(
+                        "equipmentText",
+                        event.target.value,
+                      )
+                    }
+                    rows={4}
+                    placeholder={
+                      "Rental gimbal\nExtra memory cards"
+                    }
+                    className="mt-2 w-full resize-y rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none placeholder:text-neutral-600 focus:border-neutral-500"
+                  />
+                </label>
+              </div>
 
               <label className="text-sm text-neutral-300 md:col-span-2">
                 Preparation notes
