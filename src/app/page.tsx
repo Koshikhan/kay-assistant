@@ -19,6 +19,8 @@ import { UpcomingShoots } from "@/components/UpcomingShoots";
 
 import { createShootPlanTool } from "@/lib/shootPlanTool";
 
+import { createEquipmentLibraryTool } from "@/lib/equipmentLibraryTool";
+
 import {
   createShootPlanInDatabase,
   deleteShootPlanFromDatabase,
@@ -353,6 +355,9 @@ export default function Home() {
           setLatestForecast(forecast);
         });
 
+      const equipmentLibraryTool =
+        createEquipmentLibraryTool();
+
       const shootPlanTool =
         createShootPlanTool(
           (newPlan) => {
@@ -384,6 +389,7 @@ export default function Home() {
 
         tools: [
           shootWeatherTool,
+          equipmentLibraryTool,
           shootPlanTool,
         ],
 
@@ -585,6 +591,38 @@ user asked about weather, timing or requested a shoot plan.
           Weather information is only a planning aid.
           Never claim that a drone flight is legally permitted
           or completely safe based only on weather information.
+
+          EQUIPMENT LIBRARY RULES
+
+          When the user asks:
+          - What equipment they own
+          - What equipment they should take
+          - For equipment recommendations
+          - To create or save a shoot plan
+
+          Call get_equipment_library before giving the final
+          equipment recommendation or calling create_shoot_plan.
+
+          Use available saved equipment first.
+
+          When using saved equipment:
+          - Use the exact label returned by the tool.
+          - Treat it as equipment the user owns.
+          - Do not describe maintenance or unavailable items
+            as ready to use.
+          - Do not include maintenance or unavailable items in
+            a saved shoot plan unless the user explicitly asks.
+
+          When useful equipment is missing from the user's
+          available library, include it using this format:
+          - Rent/borrow: equipment name
+
+          Do not claim the user owns an item unless
+          get_equipment_library returned it.
+
+          If the equipment library is empty or cannot be loaded,
+          provide a sensible general checklist and clearly say
+          it is not based on saved equipment.
 
           SHOOT PLAN TOOL RULES
 

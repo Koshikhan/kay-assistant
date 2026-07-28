@@ -89,7 +89,10 @@ export function createShootPlanTool(
         .min(1)
         .max(15)
         .describe(
-          "A checklist of equipment required for the shoot.",
+          `A checklist of equipment required for the shoot.
+          Prefer exact labels returned by get_equipment_library
+          for available owned gear. Prefix missing gear with
+          "Rent/borrow: ".`,
         ),
 
       notes: z
