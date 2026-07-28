@@ -1,5 +1,6 @@
 "use client";
 import { LogoutButton } from "@/components/LogoutButton";
+import { LocationDetailsCard } from "@/components/LocationDetailsCard";
 import { EquipmentLibrary } from "@/components/EquipmentLibrary";
 import {
   type FormEvent,
@@ -20,6 +21,15 @@ import { UpcomingShoots } from "@/components/UpcomingShoots";
 import { createShootPlanTool } from "@/lib/shootPlanTool";
 
 import { createEquipmentLibraryTool } from "@/lib/equipmentLibraryTool";
+
+import {
+  createLocationDetailsTool,
+} from "@/lib/locationDetailsTool";
+
+import type {
+  LocationDetails,
+} from "@/lib/locationDetails";
+
 
 import {
   createShootPlanInDatabase,
@@ -226,6 +236,11 @@ export default function Home() {
   const [latestForecast, setLatestForecast] =
     useState<ShootWeatherForecast | null>(null);
 
+  const [
+    latestLocationDetails,
+    setLatestLocationDetails,
+  ] = useState<LocationDetails[]>([]);
+
   const [shootPlans, setShootPlans] =
     useState<ShootPlan[]>([]);
 
@@ -322,6 +337,7 @@ export default function Home() {
       setMessages([]);
       setTextInput("");
       setLatestForecast(null);
+      setLatestLocationDetails([]);
       latestForecastRef.current = null;
 
       const tokenResponse = await fetch(
@@ -358,6 +374,15 @@ export default function Home() {
       const equipmentLibraryTool =
         createEquipmentLibraryTool();
 
+      const locationDetailsTool =
+        createLocationDetailsTool(
+          (locations) => {
+            setLatestLocationDetails(
+              locations,
+            );
+          },
+        );
+
       const shootPlanTool =
         createShootPlanTool(
           (newPlan) => {
@@ -388,6 +413,7 @@ export default function Home() {
         name: "Kay Assistant",
 
         tools: [
+          locationDetailsTool,
           shootWeatherTool,
           equipmentLibraryTool,
           shootPlanTool,
@@ -499,9 +525,37 @@ After the user chooses a specific location:
 - Use create_shoot_plan only if the user clearly asks
   to save or create a shoot plan.
 
-Do not claim that you checked live maps, access,
-parking, opening times or drone restrictions unless
-an appropriate tool provided that information.
+Do not claim that you checked access, opening times
+or drone restrictions unless an appropriate tool
+provided that information.
+
+          LOCATION DETAILS RULES
+
+          When you recommend one or more specific named
+          locations, call get_location_details before giving
+          the final location answer.
+
+          For a list of recommendations, send all specific
+          location names in one tool call. The tool supports
+          up to five locations.
+
+          Also call get_location_details when the user asks:
+          - Where a place is
+          - For its address or postcode
+          - For a Google Maps link
+          - For an Apple Maps link
+          - To create a shoot plan at a specific place
+
+          Use the address and postcode returned by the tool.
+          Never invent a postcode.
+
+          Tell the user that clickable Google Maps and Apple
+          Maps buttons are displayed in the location card.
+          Do not read long map URLs aloud.
+
+          When the lookup does not return an exact postcode,
+          say that the map buttons will search using the
+          location name.
 
           WEATHER TOOL RULES
 
@@ -1234,7 +1288,8 @@ user asked about weather, timing or requested a shoot plan.
 
             <p className="mt-2 text-sm text-neutral-400">
               Kay can retrieve live shoot weather,
-              calculate golden hour and save shoot plans.
+              calculate golden hour, open locations in
+              Google or Apple Maps and save shoot plans.
             </p>
           </div>
 
@@ -1245,6 +1300,10 @@ user asked about weather, timing or requested a shoot plan.
 
           <ShootWeatherCard
   forecast={latestForecast}
+/>
+
+<LocationDetailsCard
+  locations={latestLocationDetails}
 />
 
 <LogoutButton />

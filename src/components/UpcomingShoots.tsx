@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { LocationMapLinks } from "@/components/LocationMapLinks";
+
 import {
   loadEquipmentItemsFromDatabase,
   type EquipmentItem,
@@ -2157,14 +2159,22 @@ export function UpcomingShoots({
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-neutral-500">
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="shrink-0 text-neutral-500">
                       Location
                     </span>
 
-                    <span className="text-right text-neutral-200">
-                      {plan.location}
-                    </span>
+                    <div className="min-w-0 text-right">
+                      <span className="block text-neutral-200">
+                        {plan.location}
+                      </span>
+
+                      <LocationMapLinks
+                        location={
+                          plan.location
+                        }
+                      />
+                    </div>
                   </div>
 
                   <div className="flex items-start justify-between gap-4">
