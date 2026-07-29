@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   type FormEvent,
   useState,
@@ -11,10 +12,8 @@ export default function UpdatePasswordPage() {
   const [password, setPassword] =
     useState("");
 
-  const [
-    confirmPassword,
-    setConfirmPassword,
-  ] = useState("");
+  const [confirmPassword, setConfirmPassword] =
+    useState("");
 
   const [isUpdating, setIsUpdating] =
     useState(false);
@@ -22,17 +21,19 @@ export default function UpdatePasswordPage() {
   const [errorMessage, setErrorMessage] =
     useState("");
 
-  const [successMessage, setSuccessMessage] =
-    useState("");
+  const [passwordUpdated, setPasswordUpdated] =
+    useState(false);
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
-    if (password.length < 8) {
+    setErrorMessage("");
+
+    if (password.length < 6) {
       setErrorMessage(
-        "Your password must contain at least 8 characters.",
+        "Your password must contain at least 6 characters.",
       );
 
       return;
@@ -48,11 +49,8 @@ export default function UpdatePasswordPage() {
 
     try {
       setIsUpdating(true);
-      setErrorMessage("");
-      setSuccessMessage("");
 
-      const supabase =
-        createClient();
+      const supabase = createClient();
 
       const { error } =
         await supabase.auth.updateUser({
@@ -63,16 +61,9 @@ export default function UpdatePasswordPage() {
         throw error;
       }
 
-      setSuccessMessage(
-        "Your password was updated successfully.",
-      );
-
-      await supabase.auth.signOut();
-
-      window.setTimeout(() => {
-        window.location.href =
-          "/login";
-      }, 1500);
+      setPasswordUpdated(true);
+      setPassword("");
+      setConfirmPassword("");
     } catch (error) {
       console.error(
         "Password update failed:",
@@ -90,90 +81,131 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-5 py-10 text-white">
-      <section className="w-full max-w-md rounded-3xl border border-neutral-800 bg-neutral-900 p-8 shadow-2xl">
-        <p className="text-sm font-medium uppercase tracking-widest text-neutral-500">
+    <main className="flex min-h-screen min-w-0 items-center justify-center overflow-x-hidden bg-neutral-950 px-3 py-6 text-white sm:px-5 sm:py-10">
+      <section className="w-full min-w-0 max-w-md rounded-3xl border border-neutral-800 bg-neutral-900 p-4 shadow-2xl sm:p-8">
+        <p className="text-xs font-medium uppercase tracking-widest text-neutral-500 sm:text-sm">
           Account security
         </p>
 
-        <h1 className="mt-3 text-3xl font-bold">
-          Create a new password
+        <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+          Choose a new password
         </h1>
 
-        <p className="mt-3 text-sm leading-6 text-neutral-400">
-          Enter the new password you want to
-          use for your Kay Assistant account.
-        </p>
+        {!passwordUpdated ? (
+          <>
+            <p className="mt-3 text-sm leading-6 text-neutral-400">
+              Enter a new password for your
+              Kay Assistant account.
+            </p>
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-7 space-y-5"
-        >
-          <label className="block">
-            <span className="text-sm font-medium text-neutral-300">
-              New password
-            </span>
+            <form
+              onSubmit={handleSubmit}
+              className="mt-6 min-w-0 space-y-5 sm:mt-7"
+            >
+              <label
+                htmlFor="new-password"
+                className="block"
+              >
+                <span className="text-sm font-medium text-neutral-300">
+                  New password
+                </span>
 
-            <input
-              type="password"
-              value={password}
-              onChange={(event) =>
-                setPassword(
-                  event.target.value,
-                )
-              }
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition focus:border-neutral-500"
-            />
-          </label>
+                <input
+                  id="new-password"
+                  type="password"
+                  value={password}
+                  onChange={(event) =>
+                    setPassword(
+                      event.target.value,
+                    )
+                  }
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  placeholder="At least 6 characters"
+                  className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+                />
+              </label>
 
-          <label className="block">
-            <span className="text-sm font-medium text-neutral-300">
-              Confirm new password
-            </span>
+              <label
+                htmlFor="confirm-password"
+                className="block"
+              >
+                <span className="text-sm font-medium text-neutral-300">
+                  Confirm new password
+                </span>
 
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(event) =>
-                setConfirmPassword(
-                  event.target.value,
-                )
-              }
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition focus:border-neutral-500"
-            />
-          </label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) =>
+                    setConfirmPassword(
+                      event.target.value,
+                    )
+                  }
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  placeholder="Enter the password again"
+                  className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+                />
+              </label>
 
-          {errorMessage && (
-            <div className="rounded-xl border border-red-900 bg-red-950/40 p-4 text-sm text-red-300">
-              {errorMessage}
-            </div>
-          )}
+              {errorMessage && (
+                <div
+                  role="alert"
+                  aria-live="polite"
+                  className="break-words rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm leading-6 text-red-300 sm:p-4"
+                >
+                  {errorMessage}
+                </div>
+              )}
 
-          {successMessage && (
-            <div className="rounded-xl border border-green-900 bg-green-950/40 p-4 text-sm text-green-300">
-              {successMessage}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={
-              isUpdating ||
-              Boolean(successMessage)
-            }
-            className="w-full rounded-xl bg-white px-5 py-3 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+              <button
+                type="submit"
+                disabled={isUpdating}
+                className="min-h-12 w-full rounded-xl bg-white px-5 py-3 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isUpdating
+                  ? "Updating password..."
+                  : "Update password"}
+              </button>
+            </form>
+          </>
+        ) : (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-6 break-words rounded-xl border border-green-900 bg-green-950/40 p-4 text-sm leading-6 text-green-300 sm:p-5"
           >
-            {isUpdating
-              ? "Updating password..."
-              : "Update password"}
-          </button>
-        </form>
+            Your password has been updated
+            successfully.
+
+            <p className="mt-2 text-green-400">
+              You can now continue using your
+              Kay Assistant account.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-6 grid gap-3">
+          {passwordUpdated && (
+            <Link
+              href="/"
+              className="min-h-12 rounded-xl bg-white px-5 py-3 text-center font-semibold text-black transition hover:bg-neutral-200"
+            >
+              Continue to Kay Assistant
+            </Link>
+          )}
+
+          <Link
+            href="/login"
+            className="block rounded-lg px-2 py-3 text-center text-sm text-neutral-400 transition hover:bg-neutral-800/60 hover:text-white"
+          >
+            Return to login
+          </Link>
+        </div>
       </section>
     </main>
   );

@@ -76,13 +76,13 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-5 py-10 text-white">
-      <section className="w-full max-w-md rounded-3xl border border-neutral-800 bg-neutral-900 p-8 shadow-2xl">
-        <p className="text-sm font-medium uppercase tracking-widest text-neutral-500">
+    <main className="flex min-h-screen min-w-0 items-center justify-center overflow-x-hidden bg-neutral-950 px-3 py-6 text-white sm:px-5 sm:py-10">
+      <section className="w-full min-w-0 max-w-md rounded-3xl border border-neutral-800 bg-neutral-900 p-4 shadow-2xl sm:p-8">
+        <p className="text-xs font-medium uppercase tracking-widest text-neutral-500 sm:text-sm">
           Account recovery
         </p>
 
-        <h1 className="mt-3 text-3xl font-bold">
+        <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
           Reset your password
         </h1>
 
@@ -95,14 +95,18 @@ export default function ForgotPasswordPage() {
 
             <form
               onSubmit={handleSubmit}
-              className="mt-7"
+              className="mt-6 min-w-0 sm:mt-7"
             >
-              <label className="block">
+              <label
+                htmlFor="reset-email"
+                className="block"
+              >
                 <span className="text-sm font-medium text-neutral-300">
                   Email address
                 </span>
 
                 <input
+                  id="reset-email"
                   type="email"
                   value={email}
                   onChange={(event) =>
@@ -112,13 +116,18 @@ export default function ForgotPasswordPage() {
                   }
                   required
                   autoComplete="email"
+                  inputMode="email"
                   placeholder="you@example.com"
-                  className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+                  className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
                 />
               </label>
 
               {errorMessage && (
-                <div className="mt-5 rounded-xl border border-red-900 bg-red-950/40 p-4 text-sm text-red-300">
+                <div
+                  role="alert"
+                  aria-live="polite"
+                  className="mt-5 break-words rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm leading-6 text-red-300 sm:p-4"
+                >
                   {errorMessage}
                 </div>
               )}
@@ -126,7 +135,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={isSending}
-                className="mt-6 w-full rounded-xl bg-white px-5 py-3 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-6 min-h-12 w-full rounded-xl bg-white px-5 py-3 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSending
                   ? "Sending reset email..."
@@ -135,7 +144,11 @@ export default function ForgotPasswordPage() {
             </form>
           </>
         ) : (
-          <div className="mt-6 rounded-xl border border-green-900 bg-green-950/40 p-5 text-sm leading-6 text-green-300">
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-6 break-words rounded-xl border border-green-900 bg-green-950/40 p-4 text-sm leading-6 text-green-300 sm:p-5"
+          >
             Check your email for a password
             reset link.
 
@@ -148,7 +161,7 @@ export default function ForgotPasswordPage() {
 
         <Link
           href="/login"
-          className="mt-6 block text-center text-sm text-neutral-400 transition hover:text-white"
+          className="mt-6 block rounded-lg px-2 py-3 text-center text-sm text-neutral-400 transition hover:bg-neutral-800/60 hover:text-white"
         >
           Return to login
         </Link>

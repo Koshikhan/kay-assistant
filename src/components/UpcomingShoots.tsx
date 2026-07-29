@@ -1195,13 +1195,13 @@ export function UpcomingShoots({
   }
 
   return (
-    <section className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl lg:col-span-2">
+    <section className="min-w-0 rounded-3xl border border-neutral-800 bg-neutral-900 p-4 shadow-2xl sm:p-6 lg:col-span-2">
       <div className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
           Shoot planner
         </p>
 
-        <div className="mt-2 flex items-center justify-between gap-4">
+        <div className="mt-2 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-white">
               Upcoming shoots
@@ -1214,8 +1214,8 @@ export function UpcomingShoots({
           </div>
 
           {plans.length > 0 && (
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <div className="rounded-full bg-neutral-800 px-4 py-2 text-sm text-neutral-300">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+              <div className="w-full rounded-full bg-neutral-800 px-4 py-2 text-center text-sm text-neutral-300 sm:w-auto">
                 {filteredPlans.length} of{" "}
                 {plans.length}{" "}
                 {plans.length === 1
@@ -1232,20 +1232,20 @@ export function UpcomingShoots({
                   );
                   setManualFormMessage("");
                 }}
-                className="rounded-xl border border-blue-900 px-4 py-2 text-sm font-medium text-blue-300 transition hover:bg-blue-950/50"
+                className="w-full rounded-xl border border-blue-900 px-4 py-3 text-sm font-medium text-blue-300 transition hover:bg-blue-950/50 sm:w-auto sm:py-2"
               >
                 {isAddingManualShoot
                   ? "Close manual form"
                   : "Add shoot manually"}
               </button>
 
-              <div className="flex rounded-xl border border-neutral-700 bg-neutral-950 p-1">
+              <div className="flex w-full rounded-xl border border-neutral-700 bg-neutral-950 p-1 sm:w-auto">
                 <button
                   type="button"
                   onClick={() =>
                     setViewMode("list")
                   }
-                  className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition sm:flex-none ${
                     viewMode === "list"
                       ? "bg-white text-black"
                       : "text-neutral-400 hover:text-white"
@@ -1259,7 +1259,7 @@ export function UpcomingShoots({
                   onClick={() =>
                     setViewMode("calendar")
                   }
-                  className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition sm:flex-none ${
                     viewMode === "calendar"
                       ? "bg-white text-black"
                       : "text-neutral-400 hover:text-white"
@@ -1273,7 +1273,7 @@ export function UpcomingShoots({
         </div>
 
         {isAddingManualShoot && (
-          <div className="mt-5 rounded-2xl border border-blue-900/60 bg-neutral-950/60 p-5">
+          <div className="mt-5 min-w-0 rounded-2xl border border-blue-900/60 bg-neutral-950/60 p-4 sm:p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-400">
               Manual shoot
             </p>
@@ -1287,7 +1287,7 @@ export function UpcomingShoots({
               Weather checking is optional.
             </p>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div className="mt-5 grid min-w-0 gap-4 md:grid-cols-2">
               <label className="text-sm text-neutral-300">
                 Title
                 <input
@@ -1383,8 +1383,8 @@ export function UpcomingShoots({
               </label>
 
               <div className="text-sm text-neutral-300">
-                <div className="flex items-center justify-between gap-3">
-                  <span>Equipment</span>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <span>Equipment</span>
 
                   <button
                     type="button"
@@ -1394,7 +1394,7 @@ export function UpcomingShoots({
                     disabled={
                       !equipmentLibraryLoaded
                     }
-                    className="text-xs font-medium text-blue-300 transition hover:text-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-fit rounded-lg border border-blue-900 px-3 py-2 text-xs font-medium text-blue-300 transition hover:bg-blue-950/40 hover:text-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Refresh library
                   </button>
@@ -1455,7 +1455,7 @@ export function UpcomingShoots({
                               />
 
                               <span className="min-w-0 flex-1">
-                                <span className="block truncate text-sm text-neutral-200">
+                                <span className="block break-words text-sm leading-5 text-neutral-200">
                                   {formatLibraryEquipment(
                                     item,
                                   )}
@@ -1529,7 +1529,7 @@ export function UpcomingShoots({
               </label>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap">
               <button
                 type="button"
                 onClick={checkManualShootWeather}
@@ -1576,7 +1576,7 @@ export function UpcomingShoots({
             )}
 
             {manualWeatherForecast && manualWeatherSummary && (
-              <div className="mt-5 rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+              <div className="mt-5 min-w-0 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 sm:p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                   Weather preview
                 </p>
@@ -1585,7 +1585,7 @@ export function UpcomingShoots({
                   {manualWeatherForecast.location.name}
                 </h4>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
                   <div className="rounded-xl bg-neutral-950 p-4">
                     <p className="text-xs text-neutral-500">Temperature</p>
                     <p className="mt-2 text-neutral-200">
@@ -1649,7 +1649,7 @@ export function UpcomingShoots({
         )}
 
         {plans.length > 0 && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
             <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                 Planned
@@ -1713,7 +1713,7 @@ export function UpcomingShoots({
         )}
 
         {plans.length > 0 && (
-          <div className="mt-5 grid gap-3 rounded-2xl border border-neutral-800 bg-neutral-950/50 p-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))_auto]">
+          <div className="mt-5 grid min-w-0 gap-3 rounded-2xl border border-neutral-800 bg-neutral-950/50 p-3 sm:p-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))_auto]">
             <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
               Search
               <input
@@ -1725,7 +1725,7 @@ export function UpcomingShoots({
                   )
                 }
                 placeholder="Title or location"
-                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm normal-case tracking-normal text-white outline-none placeholder:text-neutral-600 focus:border-neutral-500"
+                className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-base normal-case tracking-normal text-white outline-none placeholder:text-neutral-600 focus:border-neutral-500 sm:text-sm"
               />
             </label>
 
@@ -1808,7 +1808,7 @@ export function UpcomingShoots({
               type="button"
               onClick={clearFilters}
               disabled={!hasActiveFilters}
-              className="self-end rounded-xl border border-neutral-700 px-4 py-3 text-sm font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
+              className="w-full self-end rounded-xl border border-neutral-700 px-4 py-3 text-sm font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Clear filters
             </button>
@@ -1817,13 +1817,13 @@ export function UpcomingShoots({
       </div>
 
       {!isLoaded ? (
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-8 text-center">
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-6 text-center sm:p-8">
           <p className="text-neutral-400">
             Loading saved shoots...
           </p>
         </div>
       ) : plans.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-700 bg-neutral-950/40 p-10 text-center">
+        <div className="rounded-2xl border border-dashed border-neutral-700 bg-neutral-950/40 p-6 text-center sm:p-10">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-neutral-800 text-2xl">
             📅
           </div>
@@ -1839,7 +1839,7 @@ export function UpcomingShoots({
           </p>
         </div>
       ) : filteredPlans.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-700 bg-neutral-950/40 p-10 text-center">
+        <div className="rounded-2xl border border-dashed border-neutral-700 bg-neutral-950/40 p-6 text-center sm:p-10">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-neutral-800 text-2xl">
             🔎
           </div>
@@ -1856,14 +1856,14 @@ export function UpcomingShoots({
           <button
             type="button"
             onClick={clearFilters}
-            className="mt-5 rounded-xl border border-neutral-700 px-4 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+            className="mt-5 w-full rounded-xl border border-neutral-700 px-4 py-3 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800 sm:w-auto sm:py-2.5"
           >
             Clear filters
           </button>
         </div>
       ) : viewMode === "calendar" ? (
         <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950/50">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 p-4">
+          <div className="flex flex-col gap-4 border-b border-neutral-800 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                 Calendar view
@@ -1876,11 +1876,11 @@ export function UpcomingShoots({
               </h3>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto sm:flex-wrap">
               <button
                 type="button"
                 onClick={showPreviousMonth}
-                className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+                className="rounded-xl border border-neutral-700 px-2 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800 sm:px-4 sm:py-2"
               >
                 Previous
               </button>
@@ -1888,7 +1888,7 @@ export function UpcomingShoots({
               <button
                 type="button"
                 onClick={showCurrentMonth}
-                className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+                className="rounded-xl border border-neutral-700 px-2 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800 sm:px-4 sm:py-2"
               >
                 Today
               </button>
@@ -1896,15 +1896,15 @@ export function UpcomingShoots({
               <button
                 type="button"
                 onClick={showNextMonth}
-                className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800"
+                className="rounded-xl border border-neutral-700 px-2 py-2.5 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800 sm:px-4 sm:py-2"
               >
                 Next
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <div className="min-w-[900px]">
+          <div className="overflow-x-auto overscroll-x-contain">
+          <div className="min-w-[720px] sm:min-w-[900px]">
               <div className="grid grid-cols-7 border-b border-neutral-800 bg-neutral-900">
                 {[
                   "Mon",
@@ -1941,7 +1941,7 @@ export function UpcomingShoots({
                     return (
                       <div
                         key={`${calendarYear}-${calendarMonthIndex}-${index}`}
-                        className={`min-h-36 border-b border-r border-neutral-800 p-2 ${
+                        className={`min-h-28 border-b border-r border-neutral-800 p-2 sm:min-h-36 ${
                           calendarCell.day
                             ? "bg-neutral-950/40"
                             : "bg-neutral-950/80"
@@ -2058,10 +2058,11 @@ export function UpcomingShoots({
             </div>
           </div>
 
-          <p className="border-t border-neutral-800 px-4 py-3 text-xs text-neutral-500">
-            Calendar results follow the active search and
-            filters. Select a shoot to open it in list view.
-          </p>
+          <p className="border-t border-neutral-800 px-4 py-3 text-xs leading-5 text-neutral-500">
+    Swipe horizontally to explore the calendar.
+  Results follow the active search and filters.
+  Select a shoot to open it in list view.
+</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -2110,7 +2111,7 @@ export function UpcomingShoots({
                     : ""
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex min-w-0 items-start gap-3">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-neutral-800 text-xl">
                       {getShootTypeIcon(
@@ -2126,7 +2127,7 @@ export function UpcomingShoots({
                       </p>
 
                       <h3
-                        className={`mt-1 font-semibold ${
+                        className={`mt-1 break-words font-semibold ${
                           isCompleted
                             ? "text-neutral-500 line-through"
                             : "text-white"
@@ -2138,7 +2139,7 @@ export function UpcomingShoots({
                   </div>
 
                   <span
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${getDateAlertBadgeClass(
+                    className={`w-fit shrink-0 rounded-full px-3 py-1 text-xs font-medium ${getDateAlertBadgeClass(
                       dateAlert.kind,
                     )}`}
                   >
@@ -2146,26 +2147,26 @@ export function UpcomingShoots({
                   </span>
                 </div>
 
-                <div className="mt-5 space-y-3 text-sm">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-neutral-500">
                       Date
                     </span>
 
-                    <span className="text-right text-neutral-200">
+                    <span className="text-left text-neutral-200 sm:text-right">
                       {formatShootDate(
                         plan.date,
                       )}
                     </span>
                   </div>
 
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                     <span className="shrink-0 text-neutral-500">
                       Location
                     </span>
 
-                    <div className="min-w-0 text-right">
-                      <span className="block text-neutral-200">
+                    <div className="min-w-0 text-left sm:text-right">
+                      <span className="block break-words text-neutral-200">
                         {plan.location}
                       </span>
 
@@ -2177,12 +2178,12 @@ export function UpcomingShoots({
                     </div>
                   </div>
 
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                     <span className="shrink-0 text-neutral-500">
                       Recommended time
                     </span>
 
-                    <span className="text-right text-neutral-200">
+                    <span className="break-words text-left text-neutral-200 sm:text-right">
                       {plan.recommendedTime ||
                         "Not selected"}
                     </span>
@@ -2212,9 +2213,9 @@ export function UpcomingShoots({
                 </div>
 
                 {isExpanded && (
-                  <div className="mt-6 grid gap-6 border-t border-neutral-800 pt-6 md:grid-cols-2">
+                  <div className="mt-6 grid min-w-0 gap-5 border-t border-neutral-800 pt-6 sm:gap-6 md:grid-cols-2">
                     {isEditing && (
-                      <div className="rounded-xl border border-amber-900/60 bg-neutral-900 p-5 md:col-span-2">
+                      <div className="min-w-0 rounded-xl border border-amber-900/60 bg-neutral-900 p-4 sm:p-5 md:col-span-2">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-wide text-amber-400">
                             Edit shoot
@@ -2231,7 +2232,7 @@ export function UpcomingShoots({
                           </p>
                         </div>
 
-                        <div className="mt-5 grid gap-4 md:grid-cols-2">
+                        <div className="mt-5 grid min-w-0 gap-4 md:grid-cols-2">
                           <label className="text-sm text-neutral-300">
                             Title
                             <input
@@ -2344,7 +2345,7 @@ export function UpcomingShoots({
                           </label>
                         </div>
 
-                        <div className="mt-5 flex flex-wrap gap-3">
+                        <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap">
                           <button
                             type="button"
                             onClick={() =>
@@ -2372,7 +2373,7 @@ export function UpcomingShoots({
                     )}
 
                     {plan.weather && (
-                      <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-5 md:col-span-2">
+                      <div className="min-w-0 rounded-xl border border-neutral-800 bg-neutral-900 p-4 sm:p-5 md:col-span-2">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                             Saved weather
@@ -2388,7 +2389,7 @@ export function UpcomingShoots({
                           </p>
                         </div>
 
-                        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                        <div className="mt-5 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
                           <div className="rounded-xl bg-neutral-950 p-4">
                             <p className="text-xs text-neutral-500">
                               Temperature
@@ -2487,7 +2488,7 @@ export function UpcomingShoots({
                                     shot,
                                   )
                                 }
-                                className="flex w-full items-start gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-left transition hover:border-neutral-700"
+                                className="flex min-w-0 w-full items-start gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-left transition hover:border-neutral-700"
                               >
                                 <span
                                   className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs ${
@@ -2504,8 +2505,8 @@ export function UpcomingShoots({
                                 <span
                                   className={
                                     checked
-                                      ? "text-neutral-500 line-through"
-                                      : "text-neutral-200"
+                                      ? "break-words text-neutral-500 line-through"
+                                      : "break-words text-neutral-200"
                                   }
                                 >
                                   {shot}
