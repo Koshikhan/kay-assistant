@@ -507,26 +507,24 @@ export function EquipmentLibrary() {
     } finally {
       setDeletingItemId(null);
     }
-  }
-
-  return (
-    <section className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl lg:col-span-2">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-widest text-neutral-500">
+  }  return (
+    <section className="min-w-0 rounded-3xl border border-neutral-800 bg-neutral-900 p-4 shadow-2xl sm:p-6 lg:col-span-2">
+      {/* Section heading */}
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-widest text-neutral-500 sm:text-sm">
             Your gear
           </p>
 
-          <h2 className="mt-2 text-2xl font-bold">
+          <h2 className="mt-2 text-xl font-bold sm:text-2xl">
             Equipment Library
           </h2>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400">
-            Save the cameras, lenses,
-            drones and accessories you
-            own. Later, Kay will use this
-            library when building shoot
-            plans.
+            Save the cameras, lenses, drones and
+            accessories you own. Kay uses this library
+            when recommending equipment and creating
+            shoot plans.
           </p>
         </div>
 
@@ -538,7 +536,7 @@ export function EquipmentLibrary() {
               : openCreateForm
           }
           disabled={isSaving}
-          className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full shrink-0 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           {isFormOpen
             ? "Close form"
@@ -546,48 +544,51 @@ export function EquipmentLibrary() {
         </button>
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
-          <p className="text-sm text-neutral-500">
+      {/* Equipment summary */}
+      <div className="mt-5 grid grid-cols-3 gap-2 sm:mt-6 sm:gap-3">
+        <div className="min-w-0 rounded-2xl border border-neutral-800 bg-neutral-950/60 p-3 sm:p-4">
+          <p className="break-words text-xs text-neutral-500 sm:text-sm">
             Total items
           </p>
 
-          <p className="mt-1 text-2xl font-bold">
+          <p className="mt-1 text-xl font-bold sm:text-2xl">
             {items.length}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
-          <p className="text-sm text-neutral-500">
+        <div className="min-w-0 rounded-2xl border border-neutral-800 bg-neutral-950/60 p-3 sm:p-4">
+          <p className="break-words text-xs text-neutral-500 sm:text-sm">
             Available
           </p>
 
-          <p className="mt-1 text-2xl font-bold text-green-300">
+          <p className="mt-1 text-xl font-bold text-green-300 sm:text-2xl">
             {availableCount}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
-          <p className="text-sm text-neutral-500">
+        <div className="min-w-0 rounded-2xl border border-neutral-800 bg-neutral-950/60 p-3 sm:p-4">
+          <p className="break-words text-xs text-neutral-500 sm:text-sm">
             Maintenance
           </p>
 
-          <p className="mt-1 text-2xl font-bold text-amber-300">
+          <p className="mt-1 text-xl font-bold text-amber-300 sm:text-2xl">
             {maintenanceCount}
           </p>
         </div>
       </div>
 
+      {/* Error message */}
       {errorMessage && (
-        <div className="mt-5 rounded-xl border border-red-900 bg-red-950/50 p-4 text-sm text-red-200">
+        <div className="mt-5 break-words rounded-xl border border-red-900 bg-red-950/50 p-4 text-sm leading-6 text-red-200">
           {errorMessage}
         </div>
       )}
 
+      {/* Add or edit equipment form */}
       {isFormOpen && (
         <form
           onSubmit={handleSubmit}
-          className="mt-6 rounded-2xl border border-neutral-700 bg-neutral-950/60 p-5"
+          className="mt-5 min-w-0 rounded-2xl border border-neutral-700 bg-neutral-950/60 p-4 sm:mt-6 sm:p-5"
         >
           <div>
             <h3 className="text-lg font-semibold">
@@ -596,15 +597,14 @@ export function EquipmentLibrary() {
                 : "Add equipment"}
             </h3>
 
-            <p className="mt-1 text-sm text-neutral-500">
-              Name is required. The other
-              details help Kay make better
-              equipment recommendations.
+            <p className="mt-1 text-sm leading-6 text-neutral-500">
+              Name is required. The other details help
+              Kay make better equipment recommendations.
             </p>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <label className="block">
+          <div className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2">
+            <label className="block min-w-0">
               <span className="text-sm font-medium text-neutral-300">
                 Equipment name
               </span>
@@ -619,11 +619,11 @@ export function EquipmentLibrary() {
                   }))
                 }
                 placeholder="Main camera"
-                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+                className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
               />
             </label>
 
-            <label className="block">
+            <label className="block min-w-0">
               <span className="text-sm font-medium text-neutral-300">
                 Category
               </span>
@@ -633,12 +633,13 @@ export function EquipmentLibrary() {
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
+
                     category:
                       event.target
                         .value as EquipmentCategory,
                   }))
                 }
-                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none transition focus:border-neutral-500"
+                className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-base text-white outline-none transition focus:border-neutral-500"
               >
                 {CATEGORY_OPTIONS.map(
                   (option) => (
@@ -654,7 +655,7 @@ export function EquipmentLibrary() {
               </select>
             </label>
 
-            <label className="block">
+            <label className="block min-w-0">
               <span className="text-sm font-medium text-neutral-300">
                 Brand
               </span>
@@ -665,16 +666,15 @@ export function EquipmentLibrary() {
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
-                    brand:
-                      event.target.value,
+                    brand: event.target.value,
                   }))
                 }
                 placeholder="Canon"
-                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+                className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
               />
             </label>
 
-            <label className="block">
+            <label className="block min-w-0">
               <span className="text-sm font-medium text-neutral-300">
                 Model
               </span>
@@ -685,16 +685,15 @@ export function EquipmentLibrary() {
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
-                    model:
-                      event.target.value,
+                    model: event.target.value,
                   }))
                 }
                 placeholder="EOS 2000D"
-                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+                className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
               />
             </label>
 
-            <label className="block">
+            <label className="block min-w-0">
               <span className="text-sm font-medium text-neutral-300">
                 Quantity
               </span>
@@ -707,16 +706,17 @@ export function EquipmentLibrary() {
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
+
                     quantity: Number(
                       event.target.value,
                     ),
                   }))
                 }
-                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none transition focus:border-neutral-500"
+                className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-base text-white outline-none transition focus:border-neutral-500"
               />
             </label>
 
-            <label className="block">
+            <label className="block min-w-0">
               <span className="text-sm font-medium text-neutral-300">
                 Status
               </span>
@@ -726,12 +726,13 @@ export function EquipmentLibrary() {
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
+
                     status:
                       event.target
                         .value as EquipmentStatus,
                   }))
                 }
-                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none transition focus:border-neutral-500"
+                className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-base text-white outline-none transition focus:border-neutral-500"
               >
                 {STATUS_OPTIONS.map(
                   (option) => (
@@ -746,7 +747,7 @@ export function EquipmentLibrary() {
               </select>
             </label>
 
-            <label className="block sm:col-span-2">
+            <label className="block min-w-0 sm:col-span-2">
               <span className="text-sm font-medium text-neutral-300">
                 Notes
               </span>
@@ -756,13 +757,12 @@ export function EquipmentLibrary() {
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
-                    notes:
-                      event.target.value,
+                    notes: event.target.value,
                   }))
                 }
                 rows={3}
                 placeholder="Battery condition, serial reference, preferred use..."
-                className="mt-2 w-full resize-y rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+                className="mt-2 w-full min-w-0 resize-y rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
               />
             </label>
           </div>
@@ -772,7 +772,7 @@ export function EquipmentLibrary() {
               type="button"
               onClick={closeForm}
               disabled={isSaving}
-              className="rounded-xl border border-neutral-700 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-xl border border-neutral-700 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               Cancel
             </button>
@@ -780,7 +780,7 @@ export function EquipmentLibrary() {
             <button
               type="submit"
               disabled={isSaving}
-              className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {isSaving
                 ? "Saving..."
@@ -792,7 +792,8 @@ export function EquipmentLibrary() {
         </form>
       )}
 
-      <div className="mt-6 grid gap-3 md:grid-cols-[1fr_190px_190px]">
+      {/* Search and filters */}
+      <div className="mt-5 grid min-w-0 gap-3 sm:mt-6 md:grid-cols-[minmax(0,1fr)_190px_190px]">
         <input
           type="search"
           value={searchText}
@@ -802,7 +803,7 @@ export function EquipmentLibrary() {
             )
           }
           placeholder="Search equipment..."
-          className="rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+          className="w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
         />
 
         <select
@@ -813,7 +814,7 @@ export function EquipmentLibrary() {
                 .value as EquipmentCategory | "all",
             )
           }
-          className="rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition focus:border-neutral-500"
+          className="w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition focus:border-neutral-500"
         >
           <option value="all">
             All categories
@@ -839,7 +840,7 @@ export function EquipmentLibrary() {
                 .value as EquipmentStatus | "all",
             )
           }
-          className="rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition focus:border-neutral-500"
+          className="w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition focus:border-neutral-500"
         >
           <option value="all">
             All statuses
@@ -858,8 +859,9 @@ export function EquipmentLibrary() {
         </select>
       </div>
 
+      {/* Loading state */}
       {!isLoaded ? (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
           {[1, 2].map((item) => (
             <div
               key={item}
@@ -868,7 +870,8 @@ export function EquipmentLibrary() {
           ))}
         </div>
       ) : filteredItems.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-neutral-700 bg-neutral-950/40 px-6 py-12 text-center">
+        /* Empty state */
+        <div className="mt-6 rounded-2xl border border-dashed border-neutral-700 bg-neutral-950/40 px-4 py-10 text-center sm:px-6 sm:py-12">
           <p className="text-lg font-semibold text-neutral-300">
             {items.length === 0
               ? "Your equipment library is empty"
@@ -885,14 +888,15 @@ export function EquipmentLibrary() {
             <button
               type="button"
               onClick={openCreateForm}
-              className="mt-5 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200"
+              className="mt-5 w-full rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 sm:w-auto"
             >
               Add first equipment
             </button>
           )}
         </div>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        /* Equipment cards */
+        <div className="mt-6 grid min-w-0 gap-4 md:grid-cols-2">
           {filteredItems.map((item) => {
             const category =
               getCategoryDetails(
@@ -909,21 +913,22 @@ export function EquipmentLibrary() {
             return (
               <article
                 key={item.id}
-                className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-5"
+                className="min-w-0 rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4 sm:p-5"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex min-w-0 gap-3">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-neutral-800 text-xl">
                       {category.icon}
                     </div>
 
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-white">
+                      <p className="break-words font-semibold text-white">
                         {item.name}
                       </p>
 
-                      <p className="mt-1 text-sm text-neutral-500">
+                      <p className="mt-1 break-words text-sm leading-5 text-neutral-500">
                         {category.label}
+
                         {item.quantity > 1
                           ? ` · Quantity ${item.quantity}`
                           : ""}
@@ -932,7 +937,7 @@ export function EquipmentLibrary() {
                   </div>
 
                   <span
-                    className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClasses(
+                    className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClasses(
                       item.status,
                     )}`}
                   >
@@ -944,12 +949,12 @@ export function EquipmentLibrary() {
 
                 {(item.brand ||
                   item.model) && (
-                  <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-900/80 p-3">
+                  <div className="mt-4 min-w-0 rounded-xl border border-neutral-800 bg-neutral-900/80 p-3">
                     <p className="text-xs uppercase tracking-wide text-neutral-600">
                       Brand and model
                     </p>
 
-                    <p className="mt-1 text-sm text-neutral-300">
+                    <p className="mt-1 break-words text-sm leading-6 text-neutral-300">
                       {[item.brand, item.model]
                         .filter(Boolean)
                         .join(" ")}
@@ -958,12 +963,12 @@ export function EquipmentLibrary() {
                 )}
 
                 {item.notes && (
-                  <p className="mt-4 text-sm leading-6 text-neutral-400">
+                  <p className="mt-4 break-words text-sm leading-6 text-neutral-400">
                     {item.notes}
                   </p>
                 )}
 
-                <label className="mt-5 block">
+                <label className="mt-5 block min-w-0">
                   <span className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
                     Quick status
                   </span>
@@ -977,11 +982,12 @@ export function EquipmentLibrary() {
                     onChange={(event) =>
                       void handleStatusChange(
                         item,
+
                         event.target
                           .value as EquipmentStatus,
                       )
                     }
-                    className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-3 py-2.5 text-sm text-white outline-none transition focus:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-900 px-3 py-3 text-base text-white outline-none transition focus:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {STATUS_OPTIONS.map(
                       (option) => (
@@ -996,7 +1002,7 @@ export function EquipmentLibrary() {
                   </select>
                 </label>
 
-                <div className="mt-5 flex gap-3">
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                   <button
                     type="button"
                     onClick={() =>
@@ -1006,7 +1012,7 @@ export function EquipmentLibrary() {
                       isDeleting ||
                       isUpdatingStatus
                     }
-                    className="flex-1 rounded-xl border border-neutral-700 px-4 py-2.5 text-sm font-semibold text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full rounded-xl border border-neutral-700 px-4 py-3 text-sm font-semibold text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-1"
                   >
                     Edit
                   </button>
@@ -1020,7 +1026,7 @@ export function EquipmentLibrary() {
                       isDeleting ||
                       isUpdatingStatus
                     }
-                    className="flex-1 rounded-xl border border-red-900 px-4 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full rounded-xl border border-red-900 px-4 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-1"
                   >
                     {isDeleting
                       ? "Deleting..."
@@ -1035,3 +1041,5 @@ export function EquipmentLibrary() {
     </section>
   );
 }
+
+  

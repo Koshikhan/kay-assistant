@@ -112,21 +112,28 @@ export function UserProfilePreferences() {
             {
               displayName:
                 savedProfile.displayName,
+
               experienceLevel:
                 savedProfile.experienceLevel,
+
               defaultShootType:
                 savedProfile.defaultShootType,
+
               preferredStyles:
                 savedProfile.preferredStyles,
+
               homeLocation:
                 savedProfile.homeLocation,
+
               preferredShootTime:
                 savedProfile.preferredShootTime,
+
               planningNotes:
                 savedProfile.planningNotes,
             };
 
           setProfile(loadedProfile);
+
           setStylesText(
             convertStylesToText(
               loadedProfile.preferredStyles,
@@ -145,6 +152,7 @@ export function UserProfilePreferences() {
               ? error.message
               : "Your profile could not be loaded.",
           );
+
           setMessageType("error");
         }
       } finally {
@@ -236,16 +244,22 @@ export function UserProfilePreferences() {
       setProfile({
         displayName:
           savedProfile.displayName,
+
         experienceLevel:
           savedProfile.experienceLevel,
+
         defaultShootType:
           savedProfile.defaultShootType,
+
         preferredStyles:
           savedProfile.preferredStyles,
+
         homeLocation:
           savedProfile.homeLocation,
+
         preferredShootTime:
           savedProfile.preferredShootTime,
+
         planningNotes:
           savedProfile.planningNotes,
       });
@@ -259,6 +273,7 @@ export function UserProfilePreferences() {
       setMessage(
         "Your profile and preferences were saved.",
       );
+
       setMessageType("success");
     } catch (error) {
       console.warn(
@@ -271,6 +286,7 @@ export function UserProfilePreferences() {
           ? error.message
           : "Your profile could not be saved.",
       );
+
       setMessageType("error");
     } finally {
       setIsSaving(false);
@@ -279,34 +295,34 @@ export function UserProfilePreferences() {
 
   if (!isLoaded) {
     return (
-      <section className="h-72 animate-pulse rounded-3xl border border-neutral-800 bg-neutral-900 lg:col-span-2" />
+      <section className="h-64 min-w-0 animate-pulse rounded-3xl border border-neutral-800 bg-neutral-900 sm:h-72 lg:col-span-2" />
     );
   }
 
   return (
-    <section className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl lg:col-span-2">
+    <section className="min-w-0 rounded-3xl border border-neutral-800 bg-neutral-900 p-4 shadow-2xl sm:p-6 lg:col-span-2">
       <div>
-        <p className="text-sm font-medium uppercase tracking-widest text-neutral-500">
+        <p className="text-xs font-medium uppercase tracking-widest text-neutral-500 sm:text-sm">
           Personalisation
         </p>
 
-        <h2 className="mt-2 text-2xl font-bold">
+        <h2 className="mt-2 text-xl font-bold sm:text-2xl">
           Profile and Preferences
         </h2>
 
         <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-400">
-          Save how you normally work. In the next step,
-          Kay will use these preferences when giving advice
-          and creating shoot plans.
+          Save how you normally work. Kay uses these
+          preferences to personalise creative advice,
+          location ideas and shoot plans.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="mt-6"
+        className="mt-5 min-w-0 sm:mt-6"
       >
-        <div className="grid gap-5 md:grid-cols-2">
-          <label className="block">
+        <div className="grid min-w-0 gap-4 sm:gap-5 md:grid-cols-2">
+          <label className="block min-w-0">
             <span className="text-sm font-medium text-neutral-300">
               Display name
             </span>
@@ -321,11 +337,12 @@ export function UserProfilePreferences() {
                 )
               }
               placeholder="Kay"
-              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+              autoComplete="name"
+              className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
             />
           </label>
 
-          <label className="block">
+          <label className="block min-w-0">
             <span className="text-sm font-medium text-neutral-300">
               Experience level
             </span>
@@ -341,24 +358,27 @@ export function UserProfilePreferences() {
                     .value as ExperienceLevel,
                 )
               }
-              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition focus:border-neutral-500"
+              className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition focus:border-neutral-500"
             >
               <option value="beginner">
                 Beginner
               </option>
+
               <option value="intermediate">
                 Intermediate
               </option>
+
               <option value="advanced">
                 Advanced
               </option>
+
               <option value="professional">
                 Professional
               </option>
             </select>
           </label>
 
-          <label className="block">
+          <label className="block min-w-0">
             <span className="text-sm font-medium text-neutral-300">
               Default shoot type
             </span>
@@ -374,24 +394,27 @@ export function UserProfilePreferences() {
                     .value as DefaultShootType,
                 )
               }
-              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition focus:border-neutral-500"
+              className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition focus:border-neutral-500"
             >
               <option value="mixed">
                 Mixed
               </option>
+
               <option value="photography">
                 Photography
               </option>
+
               <option value="videography">
                 Videography
               </option>
+
               <option value="drone">
                 Drone
               </option>
             </select>
           </label>
 
-          <label className="block">
+          <label className="block min-w-0">
             <span className="text-sm font-medium text-neutral-300">
               Preferred shoot time
             </span>
@@ -407,27 +430,31 @@ export function UserProfilePreferences() {
                     .value as PreferredShootTime,
                 )
               }
-              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition focus:border-neutral-500"
+              className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition focus:border-neutral-500"
             >
               <option value="any">
                 No preference
               </option>
+
               <option value="morning">
                 Morning
               </option>
+
               <option value="golden-hour">
                 Golden hour
               </option>
+
               <option value="evening">
                 Evening
               </option>
+
               <option value="night">
                 Night
               </option>
             </select>
           </label>
 
-          <label className="block md:col-span-2">
+          <label className="block min-w-0 md:col-span-2">
             <span className="text-sm font-medium text-neutral-300">
               Default or home location
             </span>
@@ -442,17 +469,19 @@ export function UserProfilePreferences() {
                 )
               }
               placeholder="London, UK"
-              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+              autoComplete="address-level2"
+              className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
             />
 
             <span className="mt-2 block text-xs leading-5 text-neutral-500">
-              Kay can use this as a starting area when you
-              ask for nearby ideas without naming a place.
+              Kay can use this as the starting area
+              when you ask for nearby ideas without
+              naming a place.
             </span>
           </label>
 
-          <div className="md:col-span-2">
-            <label className="block">
+          <div className="min-w-0 md:col-span-2">
+            <label className="block min-w-0">
               <span className="text-sm font-medium text-neutral-300">
                 Preferred creative styles
               </span>
@@ -474,11 +503,16 @@ export function UserProfilePreferences() {
                   );
                 }}
                 placeholder="Cinematic, portrait, landscape"
-                className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+                className="mt-2 w-full min-w-0 rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
               />
             </label>
 
-            <div className="mt-3 flex flex-wrap gap-2">
+            <p className="mt-2 text-xs leading-5 text-neutral-500">
+              Separate custom styles with commas, or
+              choose from the suggestions below.
+            </p>
+
+            <div className="mt-3 flex min-w-0 flex-wrap gap-2">
               {STYLE_SUGGESTIONS.map(
                 (style) => (
                   <button
@@ -489,7 +523,7 @@ export function UserProfilePreferences() {
                         style,
                       )
                     }
-                    className="rounded-full border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 transition hover:bg-neutral-800"
+                    className="min-h-10 rounded-full border border-neutral-700 px-3 py-2 text-xs text-neutral-300 transition hover:bg-neutral-800 active:bg-neutral-700"
                   >
                     + {style}
                   </button>
@@ -498,7 +532,7 @@ export function UserProfilePreferences() {
             </div>
           </div>
 
-          <label className="block md:col-span-2">
+          <label className="block min-w-0 md:col-span-2">
             <span className="text-sm font-medium text-neutral-300">
               Personal planning instructions
             </span>
@@ -513,14 +547,14 @@ export function UserProfilePreferences() {
               }
               rows={5}
               placeholder="For example: Prefer lightweight equipment, avoid very early shoots, and explain technical terms simply."
-              className="mt-2 w-full resize-y rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
+              className="mt-2 w-full min-w-0 resize-y rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500"
             />
           </label>
         </div>
 
         {message && (
           <div
-            className={`mt-5 rounded-xl border p-4 text-sm ${
+            className={`mt-5 break-words rounded-xl border p-4 text-sm leading-6 ${
               messageType === "success"
                 ? "border-green-900 bg-green-950/40 text-green-300"
                 : "border-red-900 bg-red-950/40 text-red-300"
@@ -530,11 +564,11 @@ export function UserProfilePreferences() {
           </div>
         )}
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex">
           <button
             type="submit"
             disabled={isSaving}
-            className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 sm:ml-auto sm:w-auto"
           >
             {isSaving
               ? "Saving preferences..."
