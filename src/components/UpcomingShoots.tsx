@@ -2097,7 +2097,7 @@ export function UpcomingShoots({
             return (
               <article
                 key={plan.id}
-                className={`rounded-2xl border p-5 transition ${
+                className={`min-w-0 rounded-2xl border p-4 transition sm:p-5 ${
                   isCompleted
                     ? "border-neutral-800 bg-neutral-950/40 opacity-75"
                     : isOverdue
@@ -2147,25 +2147,25 @@ export function UpcomingShoots({
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                  <div className="flex items-center justify-between gap-4">
+                <div className="mt-5 space-y-3 text-sm">
+                  <div className="grid gap-1 sm:grid-cols-[145px_minmax(0,1fr)] sm:items-start sm:gap-4">
                     <span className="text-neutral-500">
                       Date
                     </span>
 
-                    <span className="text-left text-neutral-200 sm:text-right">
+                    <span className="break-words text-neutral-200 sm:text-right">
                       {formatShootDate(
                         plan.date,
                       )}
                     </span>
                   </div>
 
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                    <span className="shrink-0 text-neutral-500">
+                  <div className="grid gap-1 sm:grid-cols-[145px_minmax(0,1fr)] sm:items-start sm:gap-4">
+                    <span className="text-neutral-500">
                       Location
                     </span>
 
-                    <div className="min-w-0 text-left sm:text-right">
+                    <div className="min-w-0 sm:text-right">
                       <span className="block break-words text-neutral-200">
                         {plan.location}
                       </span>
@@ -2178,34 +2178,34 @@ export function UpcomingShoots({
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                    <span className="shrink-0 text-neutral-500">
+                  <div className="grid gap-1 sm:grid-cols-[145px_minmax(0,1fr)] sm:items-start sm:gap-4">
+                    <span className="text-neutral-500">
                       Recommended time
                     </span>
 
-                    <span className="break-words text-left text-neutral-200 sm:text-right">
+                    <span className="break-words text-neutral-200 sm:text-right">
                       {plan.recommendedTime ||
                         "Not selected"}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="grid gap-1 sm:grid-cols-[145px_minmax(0,1fr)] sm:items-center sm:gap-4">
                     <span className="text-neutral-500">
                       Shots completed
                     </span>
 
-                    <span className="text-neutral-200">
+                    <span className="text-neutral-200 sm:text-right">
                       {completedShots.length}/
                       {plan.shotList.length}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="grid gap-1 sm:grid-cols-[145px_minmax(0,1fr)] sm:items-center sm:gap-4">
                     <span className="text-neutral-500">
                       Equipment packed
                     </span>
 
-                    <span className="text-neutral-200">
+                    <span className="text-neutral-200 sm:text-right">
                       {packedEquipment.length}/
                       {plan.equipment.length}
                     </span>
@@ -2541,7 +2541,7 @@ export function UpcomingShoots({
                                     item,
                                   )
                                 }
-                                className="flex w-full items-start gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-left transition hover:border-neutral-700"
+                                className="flex min-w-0 w-full items-start gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-left transition hover:border-neutral-700"
                               >
                                 <span
                                   className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs ${
@@ -2558,8 +2558,8 @@ export function UpcomingShoots({
                                 <span
                                   className={
                                     checked
-                                      ? "text-neutral-500 line-through"
-                                      : "text-neutral-200"
+                                      ? "break-words text-neutral-500 line-through"
+                                      : "break-words text-neutral-200"
                                   }
                                 >
                                   {item}
@@ -2577,7 +2577,7 @@ export function UpcomingShoots({
                           Preparation notes
                         </p>
 
-                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-300">
+                        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-neutral-300">
                           {plan.notes}
                         </p>
                       </div>
@@ -2585,7 +2585,7 @@ export function UpcomingShoots({
                   </div>
                 )}
 
-                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-neutral-800 pt-5 sm:grid-cols-5">
+                <div className="mt-5 grid grid-cols-1 gap-3 border-t border-neutral-800 pt-5 sm:grid-cols-2 lg:grid-cols-5">
                   <button
                     type="button"
                     onClick={() =>
