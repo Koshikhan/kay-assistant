@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
@@ -22,6 +23,37 @@ function getCredentials(formData: FormData) {
   };
 }
 
+async function getRequestOrigin(): Promise<string> {
+  const requestHeaders = await headers();
+
+  const origin =
+    requestHeaders.get("origin");
+
+  if (origin) {
+    return origin;
+  }
+
+  const host =
+    requestHeaders.get(
+      "x-forwarded-host",
+    ) ??
+    requestHeaders.get("host");
+
+  const protocol =
+    requestHeaders.get(
+      "x-forwarded-proto",
+    ) ??
+    (host?.startsWith("localhost")
+      ? "http"
+      : "https");
+
+  if (host) {
+    return `${protocol}://${host}`;
+  }
+
+  return "https://kay-assistant.vercel.app";
+}
+
 export async function login(
   formData: FormData,
 ) {
@@ -37,10 +69,11 @@ export async function login(
   const supabase = await createClient();
 
   const { error } =
-    await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    await supabase.auth
+      .signInWithPassword({
+        email,
+        password,
+      });
 
   if (error) {
     redirect(
@@ -72,12 +105,34 @@ export async function signup(
     );
   }
 
+  const origin =
+    await getRequestOrigin();
+
+  const confirmationMessage =
+    encodeURIComponent(
+      "Email confirmed successfully. You can now log in.",
+    );
+
+  const confirmationDestination =
+    `/login?message=${confirmationMessage}`;
+
+  const emailRedirectTo =
+    `${origin}/auth/callback` +
+    `?flow=signup` +
+    `&next=${encodeURIComponent(
+      confirmationDestination,
+    )}`;
+
   const supabase = await createClient();
 
   const { data, error } =
     await supabase.auth.signUp({
       email,
       password,
+
+      options: {
+        emailRedirectTo,
+      },
     });
 
   if (error) {
@@ -90,7 +145,9 @@ export async function signup(
 
   if (!data.session) {
     redirect(
-      "/login?message=Check your email to confirm your account.",
+      `/login?message=${encodeURIComponent(
+        "Check your email and click the confirmation link before logging in.",
+      )}`,
     );
   }
 
