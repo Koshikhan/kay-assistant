@@ -52,7 +52,8 @@ export function AccountMenu() {
         const {
           data: userData,
           error: userError,
-        } = await supabase.auth.getUser();
+        } =
+          await supabase.auth.getUser();
 
         if (
           userError ||
@@ -170,7 +171,7 @@ export function AccountMenu() {
       className="relative mt-5"
     >
       {isOpen && (
-        <div className="absolute bottom-[calc(100%+0.75rem)] left-0 z-50 w-full min-w-[260px] overflow-hidden rounded-2xl border border-neutral-700 bg-neutral-900 shadow-2xl">
+        <div className="mb-3 w-full min-w-[260px] overflow-hidden rounded-2xl border border-neutral-700 bg-neutral-900 shadow-2xl lg:absolute lg:bottom-0 lg:left-[calc(100%+0.75rem)] lg:z-50 lg:mb-0 lg:w-80">
           <div className="border-b border-neutral-800 p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
               Signed in as
