@@ -1,7 +1,5 @@
 "use client";
-import Link from "next/link";
-
-import { LogoutButton } from "@/components/LogoutButton";
+import { AccountMenu } from "@/components/AccountMenu";
 import { LocationDetailsCard } from "@/components/LocationDetailsCard";
 import { EquipmentLibrary } from "@/components/EquipmentLibrary";
 import {
@@ -1504,16 +1502,7 @@ user asked about weather, timing or requested a shoot plan.
             }
           />
 
-          <div className="mt-5 space-y-3">
-            <Link
-              href="/settings/profile"
-              className="block w-full rounded-xl border border-neutral-700 px-5 py-3 text-center text-sm font-semibold text-neutral-200 transition hover:bg-neutral-800"
-            >
-              Profile and Preferences
-            </Link>
-
-            <LogoutButton />
-          </div>
+          <AccountMenu />
         </section>
 
         {/* Conversation transcript */}
