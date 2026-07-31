@@ -18,6 +18,28 @@ function copyCookies(
     });
 }
 
+function createRedirectResponse(
+  request: NextRequest,
+  supabaseResponse: NextResponse,
+  destination: string,
+) {
+  const redirectUrl =
+    request.nextUrl.clone();
+
+  redirectUrl.pathname = destination;
+  redirectUrl.search = "";
+
+  const redirectResponse =
+    NextResponse.redirect(redirectUrl);
+
+  copyCookies(
+    supabaseResponse,
+    redirectResponse,
+  );
+
+  return redirectResponse;
+}
+
 export async function updateSession(
   request: NextRequest,
 ) {
@@ -81,9 +103,13 @@ export async function updateSession(
     error,
   } = await supabase.auth.getClaims();
 
+  const userId =
+    typeof data?.claims?.sub === "string"
+      ? data.claims.sub
+      : null;
+
   const isLoggedIn =
-    !error &&
-    Boolean(data?.claims?.sub);
+    !error && Boolean(userId);
 
   const pathname =
     request.nextUrl.pathname;
@@ -94,8 +120,17 @@ export async function updateSession(
   const isForgotPasswordPage =
     pathname === "/forgot-password";
 
+  const isUpdatePasswordPage =
+    pathname === "/update-password";
+
+  const isOnboardingPage =
+    pathname === "/onboarding";
+
   const isAuthRoute =
     pathname.startsWith("/auth/");
+
+  const isApiRoute =
+    pathname.startsWith("/api/");
 
   const isPublicRoute =
     isLoginPage ||
@@ -103,13 +138,8 @@ export async function updateSession(
     isAuthRoute;
 
   /*
-   * Logged-out users can only access:
-   *
-   * /login
-   * /forgot-password
-   * /auth/callback
-   *
-   * All other pages remain protected.
+   * Logged-out users can access only the
+   * login, forgot-password and auth routes.
    */
   if (
     !isLoggedIn &&
@@ -126,9 +156,7 @@ export async function updateSession(
     );
 
     const redirectResponse =
-      NextResponse.redirect(
-        loginUrl,
-      );
+      NextResponse.redirect(loginUrl);
 
     copyCookies(
       supabaseResponse,
@@ -139,8 +167,11 @@ export async function updateSession(
   }
 
   /*
-   * A logged-in user does not need to open
-   * the login or forgot-password pages.
+   * Logged-in users do not need the login
+   * or forgot-password pages.
+   *
+   * The dashboard request will then decide
+   * whether onboarding is required.
    */
   if (
     isLoggedIn &&
@@ -149,23 +180,84 @@ export async function updateSession(
       isForgotPasswordPage
     )
   ) {
-    const homeUrl =
-      request.nextUrl.clone();
+    return createRedirectResponse(
+      request,
+      supabaseResponse,
+      "/",
+    );
+  }
 
-    homeUrl.pathname = "/";
-    homeUrl.search = "";
+  /*
+   * Do not perform profile checks for API,
+   * authentication or password recovery routes.
+   */
+  const shouldCheckProfile =
+    isLoggedIn &&
+    Boolean(userId) &&
+    !isApiRoute &&
+    !isAuthRoute &&
+    !isLoginPage &&
+    !isForgotPasswordPage &&
+    !isUpdatePasswordPage;
 
-    const redirectResponse =
-      NextResponse.redirect(
-        homeUrl,
+  if (
+    shouldCheckProfile &&
+    userId
+  ) {
+    const {
+      data: profile,
+      error: profileError,
+    } = await supabase
+      .from("user_profiles")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    /*
+     * Avoid creating a redirect loop if the
+     * database is temporarily unavailable.
+     */
+    if (profileError) {
+      console.error(
+        "Profile onboarding check failed:",
+        profileError,
       );
 
-    copyCookies(
-      supabaseResponse,
-      redirectResponse,
-    );
+      return supabaseResponse;
+    }
 
-    return redirectResponse;
+    const hasCompletedOnboarding =
+      Boolean(profile);
+
+    /*
+     * A logged-in user without a profile must
+     * complete onboarding before using the app.
+     */
+    if (
+      !hasCompletedOnboarding &&
+      !isOnboardingPage
+    ) {
+      return createRedirectResponse(
+        request,
+        supabaseResponse,
+        "/onboarding",
+      );
+    }
+
+    /*
+     * Users who already have a profile do not
+     * need to revisit the onboarding page.
+     */
+    if (
+      hasCompletedOnboarding &&
+      isOnboardingPage
+    ) {
+      return createRedirectResponse(
+        request,
+        supabaseResponse,
+        "/",
+      );
+    }
   }
 
   return supabaseResponse;

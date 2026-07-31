@@ -66,14 +66,14 @@ export async function login(
     );
   }
 
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
 
   const { error } =
-    await supabase.auth
-      .signInWithPassword({
-        email,
-        password,
-      });
+    await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
   if (error) {
     redirect(
@@ -108,13 +108,8 @@ export async function signup(
   const origin =
     await getRequestOrigin();
 
-  const confirmationMessage =
-    encodeURIComponent(
-      "Email confirmed successfully. You can now log in.",
-    );
-
   const confirmationDestination =
-    `/login?message=${confirmationMessage}`;
+    "/onboarding";
 
   const emailRedirectTo =
     `${origin}/auth/callback` +
@@ -123,7 +118,8 @@ export async function signup(
       confirmationDestination,
     )}`;
 
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
 
   const { data, error } =
     await supabase.auth.signUp({
@@ -143,14 +139,23 @@ export async function signup(
     );
   }
 
+  /*
+   * When email confirmation is enabled,
+   * Supabase does not return a session yet.
+   * The user must confirm their email first.
+   */
   if (!data.session) {
     redirect(
       `/login?message=${encodeURIComponent(
-        "Check your email and click the confirmation link before logging in.",
+        "Check your email and click the confirmation link to complete your profile.",
       )}`,
     );
   }
 
+  /*
+   * If email confirmation is disabled,
+   * Supabase creates the session immediately.
+   */
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/onboarding");
 }

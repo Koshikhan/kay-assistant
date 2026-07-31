@@ -70,7 +70,16 @@ function convertTextToStyles(
   );
 }
 
-export function UserProfilePreferences() {
+
+type UserProfilePreferencesProps = {
+  mode?: "settings" | "onboarding";
+  onSaved?: () => void;
+};
+
+export function UserProfilePreferences({
+  mode = "settings",
+  onSaved,
+}: UserProfilePreferencesProps) {
   const [profile, setProfile] =
     useState<UserProfileInput>(
       DEFAULT_PROFILE,
@@ -275,6 +284,8 @@ export function UserProfilePreferences() {
       );
 
       setMessageType("success");
+
+      onSaved?.();
     } catch (error) {
       console.warn(
         "Profile saving failed:",
@@ -307,13 +318,15 @@ export function UserProfilePreferences() {
         </p>
 
         <h2 className="mt-2 text-xl font-bold sm:text-2xl">
-          Profile and Preferences
+          {mode === "onboarding"
+            ? "Set up your profile"
+            : "Profile and Preferences"}
         </h2>
 
         <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-400">
-          Save how you normally work. Kay uses these
-          preferences to personalise creative advice,
-          location ideas and shoot plans.
+          {mode === "onboarding"
+            ? "Tell Kay how you normally work so your creative advice, location ideas and shoot plans can be personalised."
+            : "Save how you normally work. Kay uses these preferences to personalise creative advice, location ideas and shoot plans."}
         </p>
       </div>
 
@@ -572,7 +585,9 @@ export function UserProfilePreferences() {
           >
             {isSaving
               ? "Saving preferences..."
-              : "Save profile and preferences"}
+              : mode === "onboarding"
+                ? "Complete profile setup"
+                : "Save profile and preferences"}
           </button>
         </div>
       </form>

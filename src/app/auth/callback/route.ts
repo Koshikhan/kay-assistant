@@ -40,9 +40,7 @@ export async function GET(
 
   const defaultDestination =
     isSignupConfirmation
-      ? `/login?message=${encodeURIComponent(
-          "Email confirmed successfully. You can now log in.",
-        )}`
+      ? "/onboarding"
       : "/update-password";
 
   const nextDestination =
@@ -98,26 +96,10 @@ export async function GET(
   }
 
   /*
-   * Email confirmation creates a temporary
-   * authenticated session. Sign out here so
-   * the user returns to the login page and
-   * logs in normally after confirming.
-   *
-   * Password recovery must remain signed in
-   * so Supabase allows the password update.
+   * Keep the confirmed user signed in.
+   * They need the active session to save
+   * their profile during onboarding.
    */
-  if (isSignupConfirmation) {
-    const { error: signOutError } =
-      await supabase.auth.signOut();
-
-    if (signOutError) {
-      console.error(
-        "Confirmation sign-out failed:",
-        signOutError,
-      );
-    }
-  }
-
   return NextResponse.redirect(
     new URL(
       nextDestination,
